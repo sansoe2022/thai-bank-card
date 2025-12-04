@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Card Maker</title>
+    <title>BBL Card Maker Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Padauk:wght@400;700&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,88 +11,43 @@
 
     <div class="main-wrapper">
         <header>
-            <h3>Bank Card Maker Pro</h3>
+            <h3>BBL Slip Maker</h3>
         </header>
 
-        <div class="preview-container">
+        <div class="preview-box">
             <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
-            <img id="resultImage" src="" alt="Card Preview">
+            
+            <img id="resultImage" src="" alt="Preview Loading...">
+            
+            <div id="loadingMessage">Generating Preview...</div>
         </div>
-        <p class="hint-text">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press image to save)</p>
+        
+        <p class="hint">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press to save)</p>
+        <button class="btn-force-update" onclick="forceUpdate()">ပုံမပေါ်လျှင် နှိပ်ပါ (Refresh)</button>
 
         <div class="controls">
+            
+            <label>ဒီဇိုင်း (Style)</label>
+            <select id="styleSelect" onchange="render()">
+                <option value="bbl_original">BBL Original (ပုံပါအတိုင်း)</option>
+                <option value="modern">Modern Style</option>
+                <option value="minimal">Minimal Style</option>
+            </select>
 
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('template')">Templates</button>
-                <button class="tab-btn" onclick="switchTab('custom')">Custom Edit</button>
+            <label>အမည် (Name)</label>
+            <input type="text" id="nameInput" value="MR. TINT AUNG KHAING" oninput="render()">
+
+            <label>အကောင့်နံပါတ် (Account No)</label>
+            <input type="text" id="acctInput" value="123-456-7890" oninput="render()">
+
+            <label>Logo ပြောင်းရန် (Optional)</label>
+            <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
+            
+            <div class="color-picker-group">
+                <label>Theme Color:</label>
+                <input type="color" id="themeColor" value="#1e4598" oninput="render()">
             </div>
 
-            <div id="tab-template" class="tab-content active">
-                
-                <label>၁။ ဒီဇိုင်း ရွေးချယ်ရန် (Style)</label>
-                <select id="styleSelect" onchange="updateStyle()">
-                    <option value="bbl_classic">BBL Classic (ပုံပါအတိုင်း)</option>
-                    <option value="modern_clean">Modern Clean</option>
-                    <option value="social_post">Social Media Post</option>
-                    <option value="gold_vip">Gold VIP</option>
-                    <option value="minimal_border">Minimal Border</option>
-                </select>
-
-                <label>၂။ ဘဏ် ရွေးချယ်ရန်</label>
-                <div class="bank-scroll" id="bankList">
-                    </div>
-                
-                <div class="input-group">
-                    <label>Logo Upload (Optional)</label>
-                    <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
-                </div>
-
-                <div class="input-group">
-                    <label>အမည် (Name)</label>
-                    <input type="text" id="nameInput" placeholder="MR. SAN KYAW SOE" oninput="render()">
-                </div>
-
-                <div class="input-group">
-                    <label>အကောင့်နံပါတ် (Account No)</label>
-                    <input type="text" id="acctInput" placeholder="123-456-7890" oninput="render()">
-                </div>
-            </div>
-
-            <div id="tab-custom" class="tab-content">
-                <div class="custom-controls">
-                    <label>⚙️ Custom Settings</label>
-                    
-                    <div class="input-group">
-                        <label>နောက်ခံပုံ တင်ရန် (Background Image)</label>
-                        <input type="file" id="bgUpload" accept="image/*" onchange="handleBgUpload(this)">
-                        <small>နောက်ခံပုံတင်ပါက Template အရောင်ပျောက်သွားပါမည်</small>
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Name Position (X / Y)</label>
-                        <input type="range" id="nameX" min="0" max="1000" value="50" oninput="render()">
-                        <input type="range" id="nameY" min="0" max="600" value="450" oninput="render()">
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Account No Position (X / Y)</label>
-                        <input type="range" id="acctX" min="0" max="1000" value="350" oninput="render()">
-                        <input type="range" id="acctY" min="0" max="600" value="280" oninput="render()">
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Font Size</label>
-                        <input type="range" id="globalScale" min="50" max="200" value="100" oninput="render()">
-                    </div>
-                    
-                    <div class="slider-group">
-                        <label>Text Color</label>
-                        <input type="color" id="customTextColor" value="#000000" oninput="render()">
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn-reset" onclick="resetAll()">Reset All</button>
         </div>
     </div>
 
