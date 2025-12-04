@@ -1,254 +1,350 @@
-// Bank Data with Logo URLs (Using Wikimedia/Online Sources for stability)
-// You can replace these URLs with local paths (e.g., 'images/bbl.png') if you host images.
+// Bank Data
 const banks = [
-    { id: 'bbl', name: 'Bangkok Bank', color: '#1e4598', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/58/Bangkok_Bank_logo.svg/1200px-Bangkok_Bank_logo.svg.png' },
-    { id: 'kbank', name: 'KBank (Kasikorn)', color: '#138f2d', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/Kasikorn_Bank_Logo.svg/1200px-Kasikorn_Bank_Logo.svg.png' },
-    { id: 'scb', name: 'SCB (Siam Comm)', color: '#4e2a84', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/4/47/Siam_Commercial_Bank_%28logo%29.svg/1200px-Siam_Commercial_Bank_%28logo%29.svg.png' },
-    { id: 'ktb', name: 'Krungthai Bank', color: '#00a5e3', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Krung_Thai_Bank_logo.svg/1200px-Krung_Thai_Bank_logo.svg.png' },
-    { id: 'bay', name: 'Krungsri (BAY)', color: '#fec43b', text_color:'#4e2a84', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f1/Bank_of_Ayudhya_logo.svg/1200px-Bank_of_Ayudhya_logo.svg.png' },
-    { id: 'ttb', name: 'TTB Bank', color: '#0056b8', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/TMBThanachart_Bank_logo.jpg/640px-TMBThanachart_Bank_logo.jpg' },
-    { id: 'cimbt', name: 'CIMB Thai', color: '#7e1a2d', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/CIMB_Group_Logo.svg/1200px-CIMB_Group_Logo.svg.png' },
-    { id: 'uob', name: 'UOB Thailand', color: '#0b2361', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/UOB_Logo.svg/2560px-UOB_Logo.svg.png' },
-    { id: 'gsb', name: 'GSB (Gov Savings)', color: '#eb008b', logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f9/Government_Savings_Bank_%28Thailand%29_logo.svg/1200px-Government_Savings_Bank_%28Thailand%29_logo.svg.png' }
+    { id: 'bbl', name: 'BBL', color: '#1e4598' },
+    { id: 'kbank', name: 'KBANK', color: '#138f2d' },
+    { id: 'scb', name: 'SCB', color: '#4e2a84' },
+    { id: 'ktb', name: 'KTB', color: '#00a5e3' },
+    { id: 'bay', name: 'BAY', color: '#fec43b' },
+    { id: 'ttb', name: 'TTB', color: '#0056b8' },
+    { id: 'uob', name: 'UOB', color: '#0b2361' },
+    { id: 'gsb', name: 'GSB', color: '#eb008b' },
+    { id: 'other', name: 'Other', color: '#333333' }
 ];
 
-let selectedBank = banks[0];
-let logoImageObj = new Image();
-logoImageObj.crossOrigin = "Anonymous"; // Crucial for using online images on canvas
+// State Management
+let state = {
+    bank: banks[0],
+    styleIndex: 0,
+    customLogo: null, // holds DataURL of uploaded image
+    logoSize: 100,
+    textSize: 30,
+    userColor: null // Overrides bank color if set
+};
 
 const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
+const imgResult = document.getElementById('resultImage');
 
-// 1. Initialize Bank Grid
-function initBankGrid() {
-    const grid = document.getElementById('bankGrid');
-    grid.innerHTML = '';
+// --- INITIALIZATION ---
+function init() {
+    renderBankList();
+    render();
+}
+
+function renderBankList() {
+    const container = document.querySelector('.bank-scroll');
+    container.innerHTML = '';
+    
     banks.forEach(bank => {
         const div = document.createElement('div');
-        div.className = 'bank-item';
-        if(bank.id === selectedBank.id) div.classList.add('active');
+        div.className = `bank-badge ${state.bank.id === bank.id ? 'active' : ''}`;
+        div.innerHTML = `<span>${bank.name}</span>`;
+        // Create a simple colored circle as icon
+        div.style.borderTop = `3px solid ${bank.color}`;
         
-        div.innerHTML = `
-            <img src="${bank.logo}" alt="${bank.name}">
-            <span>${bank.id.toUpperCase()}</span>
-        `;
-        div.onclick = () => selectBank(bank, div);
-        grid.appendChild(div);
+        div.onclick = () => {
+            state.bank = bank;
+            state.userColor = null; // Reset custom color on bank switch
+            document.getElementById('colorPicker').value = bank.color;
+            // Update UI Active State
+            document.querySelectorAll('.bank-badge').forEach(b => b.classList.remove('active'));
+            div.classList.add('active');
+            render();
+        };
+        container.appendChild(div);
     });
-    // Load default logo
-    logoImageObj.src = selectedBank.logo;
 }
 
-// 2. Select Bank Logic
-function selectBank(bank, divElement) {
-    selectedBank = bank;
-    
-    // UI Update
-    document.querySelectorAll('.bank-item').forEach(el => el.classList.remove('active'));
-    divElement.classList.add('active');
+// --- CONTROLS ---
 
-    // Load Logo & Redraw
-    logoImageObj.src = bank.logo;
-    // We wait for image to load inside the draw function, but triggering here helps
-    logoImageObj.onload = () => { triggerUpdate(); };
+function setStyle(index) {
+    state.styleIndex = index;
+    document.querySelectorAll('.style-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+    });
+    render();
 }
 
-// 3. Reset Function
-function resetForm() {
-    document.getElementById('nameInput').value = '';
-    document.getElementById('acctInput').value = '';
-    document.getElementById('themeSelect').value = 'modern_card';
-    document.getElementById('resultImage').style.display = 'none';
-    document.getElementById('placeholderText').style.display = 'block';
-    document.getElementById('downloadSection').style.display = 'none';
-    
-    // Reset to first bank
-    const firstBankDiv = document.querySelector('.bank-item');
-    if(firstBankDiv) firstBankDiv.click();
+function updateColor(color) {
+    state.userColor = color;
+    render();
 }
 
-// 4. Trigger Update (Debounce could be added here if needed)
-function triggerUpdate() {
-    // If we are in "Generated" mode, update the preview image in real-time
-    if(document.getElementById('resultImage').style.display === 'block'){
-        generateImage();
+function handleLogoUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = () => {
+                state.customLogo = img;
+                render();
+            };
+            img.src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
-// 5. Draw Card Logic (The Brain)
-function drawCard() {
-    return new Promise((resolve) => {
-        const name = document.getElementById('nameInput').value.toUpperCase() || "YOUR NAME";
-        const account = document.getElementById('acctInput').value || "000-000-0000";
-        const theme = document.getElementById('themeSelect').value;
+function resetAll() {
+    document.getElementById('nameInput').value = '';
+    document.getElementById('acctInput').value = '';
+    state.customLogo = null;
+    state.styleIndex = 0;
+    state.userColor = null;
+    state.logoSize = 100;
+    state.textSize = 30;
+    document.getElementById('logoSize').value = 100;
+    document.getElementById('textSize').value = 30;
+    document.getElementById('logoUpload').value = ''; // clear file
+    
+    // Reset Bank UI
+    const firstBank = document.querySelector('.bank-badge');
+    if(firstBank) firstBank.click();
+    
+    // Reset Style UI
+    setStyle(0);
+}
 
-        // Set Dimensions based on Theme
-        if(theme === 'social_post') {
-            canvas.width = 1080; canvas.height = 1080; // Square
-        } else if (theme === 'business_cover') {
-            canvas.width = 1200; canvas.height = 630; // Wide
-        } else {
-            canvas.width = 800; canvas.height = 500; // Standard Card
-        }
+// --- RENDER ENGINE ---
 
-        const w = canvas.width;
-        const h = canvas.height;
+function render() {
+    // 1. Setup Variables
+    const name = document.getElementById('nameInput').value || "ACCOUNT NAME";
+    const acct = document.getElementById('acctInput').value || "000-000-0000";
+    const primaryColor = state.userColor || state.bank.color;
+    const logoScale = parseInt(document.getElementById('logoSize').value) / 100; // 0.5 to 2.5
+    const textScale = parseInt(document.getElementById('textSize').value) / 30; 
 
-        // Clear
-        ctx.clearRect(0, 0, w, h);
+    // Canvas Size
+    canvas.width = 1000;
+    canvas.height = 600;
+    const w = canvas.width;
+    const h = canvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
 
-        // --- BACKGROUND DESIGNS ---
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0,0,w,h);
+    // Reset
+    ctx.clearRect(0, 0, w, h);
 
-        if (theme === 'modern_card') {
-            // Gradient Background
-            let grd = ctx.createLinearGradient(0, 0, w, h);
-            grd.addColorStop(0, selectedBank.color);
-            grd.addColorStop(1, adjustColor(selectedBank.color, 40)); // Lighter version
-            ctx.fillStyle = grd;
-            ctx.fillRect(0, 0, w, h);
-            
-            // Decorative Circles
-            ctx.globalAlpha = 0.1;
-            ctx.beginPath(); ctx.arc(w, 0, 300, 0, 2*Math.PI); ctx.fill();
-            ctx.beginPath(); ctx.arc(0, h, 200, 0, 2*Math.PI); ctx.fill();
-            ctx.globalAlpha = 1.0;
-
-            // White Card Container inside
-            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-            ctx.shadowColor = "rgba(0,0,0,0.3)";
-            ctx.shadowBlur = 20;
-            ctx.roundRect(50, 50, w-100, h-100, 20);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-        } else if (theme === 'social_post') {
-            // Solid Color Top Half
-            ctx.fillStyle = selectedBank.color;
-            ctx.fillRect(0, 0, w, h/2);
-            
-            // White Bottom Half
-            ctx.fillStyle = "#f8f9fa";
-            ctx.fillRect(0, h/2, w, h/2);
-
-            // Center White Box
+    // 2. DRAW BACKGROUND based on Style
+    switch(state.styleIndex) {
+        case 0: // Clean
             ctx.fillStyle = "#ffffff";
-            ctx.shadowColor = "rgba(0,0,0,0.2)";
-            ctx.shadowBlur = 30;
-            ctx.roundRect(100, 200, w-200, h-400, 30);
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = primaryColor;
+            ctx.fillRect(0,0,20,h); // Side bar
+            break;
+            
+        case 1: // Dark
+            ctx.fillStyle = "#1e1e1e";
+            ctx.fillRect(0,0,w,h);
+            // Gold accent
+            ctx.strokeStyle = "#D4AF37";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(30,30,w-60,h-60);
+            break;
+
+        case 2: // Gradient
+            let grd = ctx.createLinearGradient(0,0,w,h);
+            grd.addColorStop(0, primaryColor);
+            grd.addColorStop(1, "#ffffff");
+            ctx.fillStyle = grd;
+            ctx.fillRect(0,0,w,h);
+            break;
+
+        case 3: // Glass
+            // Image bg placeholder or color
+            ctx.fillStyle = primaryColor;
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "rgba(255,255,255,0.2)";
+            ctx.beginPath(); ctx.arc(0,0,400,0,Math.PI*2); ctx.fill();
+            // Glass Box
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.shadowBlur = 20; ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.roundRect(100, 100, w-200, h-200, 20);
             ctx.fill();
             ctx.shadowBlur = 0;
+            break;
 
-        } else if (theme === 'minimalist') {
-             // Just a clean border and simple text
-             ctx.strokeStyle = selectedBank.color;
-             ctx.lineWidth = 20;
-             ctx.strokeRect(0, 0, w, h);
-        } else {
-            // Business Cover
-            ctx.fillStyle = selectedBank.color;
-            ctx.fillRect(0, 0, 150, h); // Side bar
-            
-            // Top Bar
-            ctx.fillStyle = selectedBank.color;
-            ctx.globalAlpha = 0.1;
-            ctx.fillRect(150, 0, w-150, 100);
-            ctx.globalAlpha = 1.0;
-        }
+        case 4: // Social (Square-ish focus)
+            ctx.fillStyle = "#f3f4f6";
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "#ffffff";
+            ctx.shadowColor = "#ddd"; ctx.shadowBlur = 10;
+            ctx.roundRect(cx-300, 50, 600, h-100, 30);
+            ctx.fill(); ctx.shadowBlur = 0;
+            // Top Header
+            ctx.fillStyle = primaryColor;
+            ctx.beginPath();
+            ctx.roundRect(cx-300, 50, 600, 150, [30,30,0,0]);
+            ctx.fill();
+            break;
 
-        // --- CONTENT DRAWING ---
-        
-        // Helper to center text
-        const centerX = w / 2;
-        
-        // 1. Draw Logo
-        const logoSize = (theme === 'social_post') ? 150 : 100;
-        let logoX, logoY;
+        case 5: // Stripe
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = primaryColor;
+            ctx.transform(1, 0, -0.3, 1, 0, 0); // Skew
+            ctx.fillRect(200, 0, 300, h);
+            ctx.resetTransform();
+            break;
 
-        if(theme === 'modern_card') { logoX = 90; logoY = 90; }
-        else if(theme === 'social_post') { logoX = centerX - (logoSize/2); logoY = 250; }
-        else if(theme === 'minimalist') { logoX = 60; logoY = 60; }
-        else { logoX = 180; logoY = 50; }
+        case 6: // Border
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0,0,w,h);
+            ctx.strokeStyle = primaryColor;
+            ctx.lineWidth = 20;
+            ctx.strokeRect(0,0,w,h);
+            break;
 
-        // Draw Image (Check if loaded)
-        if(logoImageObj.complete && logoImageObj.naturalHeight !== 0) {
-            ctx.drawImage(logoImageObj, logoX, logoY, logoSize, logoSize);
-        }
+        case 7: // Bold
+            ctx.fillStyle = primaryColor;
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(50, 180, w-100, h-230);
+            break;
 
-        // 2. Draw Text
-        ctx.textAlign = (theme === 'social_post') ? "center" : "left";
-        const textColor = (theme === 'minimalist') ? "#333" : (selectedBank.text_color || selectedBank.color); // Use dark text for clean look
-        
-        // Bank Name
-        ctx.fillStyle = textColor;
-        ctx.font = "bold 40px Arial";
-        let bankNameX = (theme === 'social_post') ? centerX : logoX + logoSize + 20;
-        let bankNameY = (theme === 'social_post') ? logoY + logoSize + 50 : logoY + (logoSize/2) + 15;
-        ctx.fillText(selectedBank.name, bankNameX, bankNameY);
+        case 8: // Receipt
+            ctx.fillStyle = "#eee";
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "#fff";
+            ctx.shadowColor="#ccc"; ctx.shadowBlur=5;
+            // Zigzag bottom logic omitted for brevity, using simple rect
+            ctx.fillRect(200, 50, 600, h-100);
+            ctx.shadowBlur=0;
+            ctx.strokeStyle = "#ddd";
+            ctx.beginPath(); ctx.moveTo(250, 200); ctx.lineTo(750, 200); ctx.stroke();
+            break;
 
-        // Account Details Position
-        let infoY = (theme === 'social_post') ? bankNameY + 100 : bankNameY + 100;
-        let infoX = (theme === 'social_post') ? centerX : (theme === 'modern_card' ? 90 : 60);
-        if(theme === 'business_cover') infoX = 180;
+        case 9: // Circle
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = primaryColor;
+            ctx.beginPath(); ctx.arc(w, 0, 400, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, h, 200, 0, Math.PI*2); ctx.fill();
+            break;
+    }
 
-        // Label: Name
-        ctx.fillStyle = "#888";
-        ctx.font = "bold 24px Padauk";
-        ctx.fillText("အကောင့်အမည် (Name)", infoX, infoY);
-
-        // Value: Name
-        ctx.fillStyle = "#000";
-        ctx.font = "bold 45px Padauk";
-        ctx.fillText(name, infoX, infoY + 50);
-
-        // Label: Account
-        ctx.fillStyle = "#888";
-        ctx.font = "bold 24px Arial";
-        ctx.fillText("အကောင့်နံပါတ် (Account No)", infoX, infoY + 110);
-
-        // Value: Account
-        ctx.fillStyle = selectedBank.color;
-        ctx.font = "bold 60px Arial";
-        ctx.fillText(account, infoX, infoY + 170);
-
-        resolve();
-    });
-}
-
-// Helper to lighten colors
-function adjustColor(color, amount) {
-    return color; // Simplified for this demo, usually requires HEX to RGB conversion
-}
-
-// 6. Generate Function
-async function generateImage() {
-    await drawCard(); // Wait for draw
-    const dataURL = canvas.toDataURL("image/png");
+    // 3. TEXT & LOGO PLACEMENT CONFIG
+    // We define text colors and positions based on style
+    let txtColor = "#333";
+    let labelColor = "#777";
+    let align = "left";
+    let baseX = 80; 
+    let baseY = 250;
     
-    const imgObj = document.getElementById('resultImage');
-    imgObj.src = dataURL;
-    imgObj.style.display = 'block';
+    if(state.styleIndex === 1) { txtColor = "#D4AF37"; labelColor = "#aaa"; } // Dark
+    if(state.styleIndex === 4) { align = "center"; baseX = cx; baseY = 320; } // Social
+    if(state.styleIndex === 7) { baseX = 80; baseY = 280; } // Bold
+    if(state.styleIndex === 8) { align = "center"; baseX = cx; baseY = 300; } // Receipt
+
+    // 4. DRAW LOGO
+    const logoBaseSize = 100 * logoScale;
+    let logoX = 80;
+    let logoY = 50;
+
+    if(align === "center") {
+        logoX = cx - (logoBaseSize/2);
+        logoY = (state.styleIndex === 4) ? 75 : 80;
+    } else if (state.styleIndex === 3) {
+        logoX = 140; logoY = 130; // Glass inner
+    }
+
+    if (state.customLogo) {
+        // Draw Uploaded Image
+        ctx.save();
+        // Optional: Make it circular
+        roundedImage(ctx, logoX, logoY, logoBaseSize, logoBaseSize, 10);
+        ctx.drawImage(state.customLogo, logoX, logoY, logoBaseSize, logoBaseSize);
+        ctx.restore();
+    } else {
+        // Draw Fallback Circle with Text (No more broken links!)
+        ctx.fillStyle = (state.styleIndex === 4 || state.styleIndex === 7) ? "#fff" : primaryColor;
+        
+        // Adjust for Dark mode
+        if(state.styleIndex === 1) ctx.fillStyle = "#D4AF37";
+
+        ctx.beginPath();
+        ctx.arc(logoX + logoBaseSize/2, logoY + logoBaseSize/2, logoBaseSize/2, 0, Math.PI*2);
+        ctx.fill();
+        
+        ctx.fillStyle = (state.styleIndex === 4 || state.styleIndex === 7) ? primaryColor : "#fff";
+        if(state.styleIndex === 1) ctx.fillStyle = "#000";
+
+        ctx.font = `bold ${logoBaseSize * 0.4}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(state.bank.name, logoX + logoBaseSize/2, logoY + logoBaseSize/2);
+    }
+
+    // 5. DRAW TEXT
+    ctx.textAlign = align;
+    const fontBase = 30 * textScale;
+
+    // Bank Name Label (Optional)
+    if(state.styleIndex !== 4 && state.styleIndex !== 8) {
+        ctx.fillStyle = txtColor;
+        ctx.font = `bold ${fontBase * 1.5}px Arial`;
+        // Position next to logo or below depending on layout
+        if(align === 'left') ctx.fillText(state.bank.name, logoX + logoBaseSize + 20, logoY + (logoBaseSize/2) + 10);
+    }
+
+    // Account Name
+    ctx.fillStyle = labelColor;
+    ctx.font = `${fontBase * 0.8}px Padauk`;
+    ctx.fillText("အကောင့်အမည် (Account Name)", baseX, baseY);
+
+    ctx.fillStyle = txtColor;
+    ctx.font = `bold ${fontBase * 1.2}px Padauk`;
+    ctx.fillText(name, baseX, baseY + (fontBase * 1.5));
+
+    // Account Number
+    ctx.fillStyle = labelColor;
+    ctx.font = `${fontBase * 0.8}px Padauk`;
+    ctx.fillText("အကောင့်နံပါတ် (Account No)", baseX, baseY + (fontBase * 3.5));
+
+    ctx.fillStyle = primaryColor;
+    if(state.styleIndex === 1) ctx.fillStyle = "#fff"; // White num on dark
+    if(state.styleIndex === 2) ctx.fillStyle = "#000"; // Black num on gradient
     
-    document.getElementById('placeholderText').style.display = 'none';
-    document.getElementById('downloadSection').style.display = 'block';
+    ctx.font = `bold ${fontBase * 1.6}px Arial`;
+    ctx.fillText(acct, baseX, baseY + (fontBase * 5));
+
+    // 6. Output to Image
+    imgResult.src = canvas.toDataURL("image/png");
 }
 
-// Extend Canvas RoundRect support for older browsers just in case
-if (CanvasRenderingContext2D.prototype.roundRect === undefined) {
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+// Helper for rounded images (optional)
+function roundedImage(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.clip();
+}
+
+// Polyfill for roundRect if needed
+if (!ctx.roundRect) {
+    ctx.roundRect = function(x, y, w, h, r) {
         if (w < 2 * r) r = w / 2;
         if (h < 2 * r) r = h / 2;
         this.beginPath();
-        this.moveTo(x + r, y);
-        this.arcTo(x + w, y, x + w, y + h, r);
-        this.arcTo(x + w, y + h, x, y + h, r);
-        this.arcTo(x, y + h, x, y, r);
-        this.arcTo(x, y, x + w, y, r);
+        this.moveTo(x+r, y);
+        this.arcTo(x+w, y, x+w, y+h, r);
+        this.arcTo(x+w, y+h, x, y+h, r);
+        this.arcTo(x, y+h, x, y, r);
+        this.arcTo(x, y, x+w, y, r);
         this.closePath();
         return this;
-    };
+    }
 }
 
-// Init
-window.onload = initBankGrid;
+// Start
+window.onload = init;
