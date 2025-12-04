@@ -11,19 +11,22 @@ const banks = [
     { id: 'cimbt', name: 'CIMB Thai', short: 'CIMBT', thName: 'ซีไอเอ็มบี', color: '#7e1a2d', logo: 'img/cimbt.png' }
 ];
 
-// State
 let currentBank = banks[0];
 let uploadedUserImg = null;
 let bankLogoImg = new Image();
-// Note: Removed crossOrigin to prevent CORS issues with local images
+
+// Cropper Variables
+let cropper = null;
+const imageToCrop = document.getElementById('imageToCrop');
+const cropModal = document.getElementById('cropModalWrapper');
 
 const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
-// --- INITIALIZATION ---
+// --- INIT ---
 window.onload = function() {
-    // 1. Automatically create the Save Modal (No HTML editing needed)
+    // 1. Inject Save Modal (Fixed for Long Press)
     injectModalSystem();
     
     // 2. Init App
@@ -36,15 +39,64 @@ window.onload = function() {
     }
 };
 
-// --- AUTOMATIC MODAL INJECTION (New Feature) ---
+// --- CROP SYSTEM LOGIC ---
+function handleLogoUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // Set image source for cropper
+            imageToCrop.src = e.target.result;
+            // Open Modal
+            cropModal.style.display = 'flex';
+            
+            // Destroy old cropper if exists
+            if(cropper) { cropper.destroy(); }
+            
+            // Initialize Cropper (Square aspect ratio for best fit)
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 1, // 1:1 Square
+                viewMode: 1,
+                autoCropArea: 0.8,
+            });
+            // Reset input so same file can be selected again
+            input.value = '';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function confirmCrop() {
+    if(cropper) {
+        // Get cropped canvas
+        const croppedCanvas = cropper.getCroppedCanvas({
+            width: 300, height: 300 // Resize for performance
+        });
+        
+        // Convert to Image Object for drawing
+        const img = new Image();
+        img.onload = () => {
+            uploadedUserImg = img;
+            render(); // Redraw card
+            closeCropModal();
+        };
+        img.src = croppedCanvas.toDataURL();
+    }
+}
+
+function closeCropModal() {
+    cropModal.style.display = 'none';
+    if(cropper) { cropper.destroy(); cropper = null; }
+}
+
+// --- AUTOMATIC MODAL INJECTION (FIXED) ---
 function injectModalSystem() {
-    // 1. Inject CSS
     const style = document.createElement('style');
+    // Removed user-select: none from .js-modal-img
     style.innerHTML = `
         .js-image-modal {
             display: none; position: fixed; z-index: 10000; left: 0; top: 0;
             width: 100%; height: 100%; overflow: auto;
-            background-color: rgba(0,0,0,0.9);
+            background-color: rgba(0,0,0,0.95);
             flex-direction: column; align-items: center; justify-content: center;
             backdrop-filter: blur(5px); animation: fadeIn 0.3s;
         }
@@ -55,13 +107,16 @@ function injectModalSystem() {
         .js-modal-img {
             width: 100%; border-radius: 12px;
             box-shadow: 0 4px 20px rgba(255,255,255,0.2);
-            pointer-events: auto; user-select: none; -webkit-user-select: none;
+            /* CRITICAL: Allow interaction */
+            pointer-events: auto; 
+            touch-action: auto;
         }
         .js-hint-badge {
             background: #fff; color: #000; padding: 10px 20px;
             border-radius: 50px; font-weight: bold; font-size: 14px;
             margin-bottom: 20px; text-align: center;
             box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: pulse 2s infinite;
         }
         .js-close-btn {
             margin-top: 20px; padding: 12px 30px; border-radius: 50px;
@@ -69,10 +124,10 @@ function injectModalSystem() {
             font-weight: bold; cursor: pointer; font-size: 16px;
         }
         @keyframes fadeIn { from {opacity:0} to {opacity:1} }
+        @keyframes pulse { 0% {transform:scale(1);} 50% {transform:scale(1.05);} 100% {transform:scale(1);} }
     `;
     document.head.appendChild(style);
 
-    // 2. Inject HTML
     const modalHTML = `
         <div id="jsSaveModal" class="js-image-modal">
             <div class="js-modal-content">
@@ -85,23 +140,21 @@ function injectModalSystem() {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-// --- NEW DOWNLOAD FUNCTION ---
+// --- DOWNLOAD FUNCTION ---
 function downloadImage() {
     try {
         const dataUrl = canvas.toDataURL("image/png");
         
-        // 1. Open the Modal immediately (Safest for FB)
+        // Open Modal
         const modal = document.getElementById('jsSaveModal');
         const modalImg = document.getElementById('jsModalImg');
         
         if(modal && modalImg) {
             modalImg.src = dataUrl;
             modal.style.display = "flex";
-        } else {
-            alert("Modal Error: Please refresh page");
         }
-
-        // 2. Try background download (Bonus for Chrome users)
+        
+        // Also try direct download
         const link = document.createElement('a');
         link.download = `BankCard-${currentBank.short}-${Date.now()}.png`;
         link.href = dataUrl;
@@ -118,7 +171,7 @@ function closeJsModal() {
     document.getElementById('jsSaveModal').style.display = "none";
 }
 
-// --- CORE FUNCTIONS ---
+// --- CORE (Bank Logic) ---
 function initBankGrid() {
     const grid = document.getElementById('bankGrid');
     grid.innerHTML = '';
@@ -148,27 +201,15 @@ function loadBankLogo(bank) {
     bankLogoImg.onerror = () => render();
 }
 
-function handleLogoUpload(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => { uploadedUserImg = img; render(); };
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
 function resetForm() {
     document.getElementById('nameInput').value = "";
     document.getElementById('acctInput').value = "";
-    document.getElementById('logoUpload').value = "";
+    document.getElementById('logoUpload').value = ""; // Clear file input
     uploadedUserImg = null;
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
-// --- RENDER ENGINE ---
+// --- RENDER ---
 function render() {
     const name = (document.getElementById('nameInput').value || "NAME HERE").toUpperCase();
     const acct = document.getElementById('acctInput').value || "000-000-0000";
@@ -195,12 +236,11 @@ function render() {
     imgOutput.src = canvas.toDataURL("image/png");
 }
 
-// --- DRAWING STYLES (Same as before) ---
+// --- DRAW FUNCTIONS ---
 function drawBBLStyle(w, h, name, acct) {
     const mainColor = currentBank.color;
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
 
-    // Left Logo
     if (bankLogoImg.complete && bankLogoImg.naturalHeight !== 0) {
         ctx.drawImage(bankLogoImg, 50, 40, 150, 150);
     } else {
@@ -208,7 +248,6 @@ function drawBBLStyle(w, h, name, acct) {
     }
     ctx.fillStyle = "#ccc"; ctx.fillRect(230, 50, 4, 120);
 
-    // Header Text
     let textX = 260;
     ctx.fillStyle = mainColor; ctx.font = "bold 80px Roboto, Arial"; ctx.textAlign = "left";
     ctx.fillText(currentBank.short, textX, 110);
@@ -216,7 +255,6 @@ function drawBBLStyle(w, h, name, acct) {
     ctx.fillText(currentBank.thName || "ธนาคาร", textX, 160);
     ctx.fillStyle = "#f97316"; ctx.fillRect(textX, 125, 300, 4);
 
-    // Right Box (QR/User)
     const boxSize = 160; const boxX = w - 210; const boxY = 40;
     ctx.fillStyle = "#f8f9fa"; ctx.beginPath(); ctx.roundRect(boxX, boxY, boxSize, boxSize, 20); ctx.fill();
     ctx.strokeStyle = mainColor; ctx.lineWidth = 4; ctx.stroke();
@@ -227,7 +265,6 @@ function drawBBLStyle(w, h, name, acct) {
         ctx.fillText("QR/PHOTO", boxX + boxSize/2, boxY + boxSize/2);
     }
 
-    // Data
     ctx.fillStyle = mainColor; ctx.fillRect(50, 250, 320, 80);
     ctx.fillStyle = (currentBank.id === 'bay') ? currentBank.txtColor : "#fff";
     ctx.font = "bold 32px Roboto"; ctx.textAlign = "center"; ctx.fillText("BANK NUMBER", 210, 300);
