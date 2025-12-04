@@ -81,21 +81,43 @@ function resetForm() {
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
-// --- NEW DOWNLOAD FUNCTION ---
+// --- NEW DOWNLOAD LOGIC (Facebook Safe) ---
 function downloadImage() {
-    // 1. Try modern download (Standard)
-    const link = document.createElement('a');
-    link.download = `BankCard-${currentBank.short}-${Date.now()}.png`;
-    link.href = canvas.toDataURL("image/png");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // 2. Fallback for some webviews: open in new tab
-    // setTimeout(() => {
-    //     window.open(canvas.toDataURL("image/png"), '_blank');
-    // }, 500);
+    const dataUrl = canvas.toDataURL("image/png");
+    
+    // 1. Show the Modal
+    const modal = document.getElementById('saveModal');
+    const modalImg = document.getElementById('modalImg');
+    
+    modalImg.src = dataUrl;
+    modal.style.display = "flex"; // Show modal using Flexbox
+    
+    // 2. Try standard download as well (Works for Chrome/Desktop)
+    // This won't crash FB browser, it just might not work, which is why we have the modal.
+    try {
+        const link = document.createElement('a');
+        link.download = `BankCard-${currentBank.short}-${Date.now()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (e) {
+        console.log("Auto-download blocked, using modal");
+    }
 }
+
+function closeModal() {
+    document.getElementById('saveModal').style.display = "none";
+}
+
+// Close modal if clicked outside image
+window.onclick = function(event) {
+    const modal = document.getElementById('saveModal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
 
 // --- RENDER ENGINE ---
 function render() {
