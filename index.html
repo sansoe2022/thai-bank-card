@@ -3,51 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Bank Card Maker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Padauk:wght@400;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <title>Thai Bank Card Maker M3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Padauk:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="main-wrapper">
-        <header>
-            <h3>Thai Bank Card Maker</h3>
-            <p>ဘဏ်မျိုးစုံနှင့် ဒီဇိုင်းမျိုးစုံ ပြုလုပ်နိုင်သည်</p>
+    <div class="app-container">
+        <header class="top-app-bar">
+            <div class="header-content">
+                <h3>Bank Card Maker</h3>
+                <p>Material Design 3</p>
+            </div>
+            <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">
+                <span class="material-symbols-outlined">dark_mode</span>
+            </button>
         </header>
 
-        <div class="preview-box">
-            <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
-            <img id="resultImage" src="" alt="Card Preview">
-        </div>
-        
-        <p class="hint">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press to save)</p>
-
-        <div class="controls">
-
-            <label>၁။ ဘဏ် ရွေးချယ်ရန် (Select Bank)</label>
-            <div class="bank-grid" id="bankGrid">
+        <div class="content-body">
+            <div class="preview-card-container">
+                <div class="preview-box">
+                    <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
+                    <img id="resultImage" src="" alt="Card Preview">
                 </div>
-
-            <label>၂။ ဒီဇိုင်း ရွေးချယ်ရန် (Design Layout)</label>
-            <select id="styleSelect" onchange="render()">
-                <option value="layout_bbl">BBL Original Style (ပုံပါအတိုင်း)</option>
-                <option value="layout_gradient">Gradient Design (အရောင်ပြေး)</option>
-                <option value="layout_material">Google Material Design</option>
-                <option value="layout_modern">Modern Clean</option>
-                <option value="layout_minimal">Minimal Border</option>
-            </select>
-
-            <label>၃။ အချက်အလက်များ</label>
-            <input type="text" id="nameInput" placeholder="MR. TINT AUNG KHAING" oninput="render()">
-            <input type="text" id="acctInput" placeholder="123-456-7890" oninput="render()">
-
-            <label>Logo ပြောင်းလိုပါက (Optional)</label>
-            <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
-
-            <div class="btn-group">
-                <button class="btn-reset" onclick="resetForm()">Reset All</button>
+                <div class="hint-chip">
+                    <span class="material-symbols-outlined">save</span>
+                    ပုံကို save ရန် ဖိနှိပ်ထားပါ (Long press)
+                </div>
             </div>
 
+            <div class="controls-panel">
+
+                <div class="input-section">
+                    <label class="section-label">၁။ ဘဏ် ရွေးချယ်ရန် (Bank)</label>
+                    <div class="bank-grid" id="bankGrid">
+                        </div>
+                </div>
+
+                <div class="input-section">
+                    <label class="section-label">၂။ အချက်အလက်များ (Details)</label>
+                    
+                    <div class="md-input-group">
+                        <input type="text" id="nameInput" placeholder=" " oninput="render()">
+                        <label>အမည် (Name)</label>
+                    </div>
+
+                    <div class="md-input-group">
+                        <input type="text" id="acctInput" placeholder=" " oninput="render()">
+                        <label>အကောင့်နံပါတ် (Account No)</label>
+                    </div>
+                </div>
+
+                <div class="input-section">
+                    <label class="section-label">၃။ ဒီဇိုင်းနှင့် ဓာတ်ပုံ (Design & Image)</label>
+                    
+                    <div class="md-select-wrapper">
+                        <select id="styleSelect" onchange="render()">
+                            <option value="layout_bbl">BBL Original Style</option>
+                            <option value="layout_gradient">Gradient Style</option>
+                            <option value="layout_material">Material Style</option>
+                            <option value="layout_modern">Modern Style</option>
+                        </select>
+                        <span class="material-symbols-outlined arrow">expand_more</span>
+                    </div>
+
+                    <div class="upload-container" onclick="document.getElementById('logoUpload').click()">
+                        <div class="upload-icon">
+                            <span class="material-symbols-outlined">add_photo_alternate</span>
+                        </div>
+                        <div class="upload-text">
+                            <strong>QR / Profile ပုံတင်ရန်</strong>
+                            <span>(ညာဘက်အကွက်တွင် ပေါ်မည်)</span>
+                        </div>
+                        <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)" hidden>
+                    </div>
+                </div>
+
+                <button class="btn-filled" onclick="resetForm()">
+                    <span class="material-symbols-outlined">restart_alt</span>
+                    Reset All
+                </button>
+
+            </div>
         </div>
     </div>
 
