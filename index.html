@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBL Card Maker Fixed</title>
+    <title>All Thai Bank Card Maker</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Padauk:wght@400;700&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,41 +11,43 @@
 
     <div class="main-wrapper">
         <header>
-            <h3>BBL Slip Maker</h3>
+            <h3>Thai Bank Card Maker</h3>
+            <p>ဘဏ်မျိုးစုံနှင့် ဒီဇိုင်းမျိုးစုံ ပြုလုပ်နိုင်သည်</p>
         </header>
 
         <div class="preview-box">
             <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
-            
             <img id="resultImage" src="" alt="Preview Loading...">
-            
-            <div id="loadingMessage">Generating Preview...</div>
+            <div id="loadingText">Generating...</div>
         </div>
         
         <p class="hint">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press to save)</p>
-        <button class="btn-force-update" onclick="forceUpdate()">ပုံမပေါ်လျှင် နှိပ်ပါ (Refresh)</button>
 
         <div class="controls">
-            
-            <label>ဒီဇိုင်း (Style)</label>
+
+            <label>၁။ ဘဏ် ရွေးချယ်ရန် (Select Bank)</label>
+            <div class="bank-grid" id="bankGrid">
+                </div>
+
+            <label>၂။ ဒီဇိုင်း ရွေးချယ်ရန် (Design Layout)</label>
             <select id="styleSelect" onchange="render()">
-                <option value="bbl_original">BBL Original (ပုံပါအတိုင်း)</option>
-                <option value="modern">Modern Style</option>
-                <option value="minimal">Minimal Style</option>
+                <option value="layout_bbl">BBL Original Style (ပုံပါအတိုင်း)</option>
+                <option value="layout_modern">Modern Clean</option>
+                <option value="layout_social">Social Media Post</option>
+                <option value="layout_minimal">Minimal Border</option>
+                <option value="layout_receipt">Slip/Receipt Style</option>
             </select>
 
-            <label>အမည် (Name)</label>
-            <input type="text" id="nameInput" value="MR. TINT AUNG KHAING" oninput="render()">
+            <label>၃။ အချက်အလက်များ</label>
+            <input type="text" id="nameInput" placeholder="အမည် (Name)" value="MR. TINT AUNG KHAING" oninput="render()">
+            <input type="text" id="acctInput" placeholder="အကောင့်နံပါတ်" value="123-456-7890" oninput="render()">
 
-            <label>အကောင့်နံပါတ် (Account No)</label>
-            <input type="text" id="acctInput" value="123-456-7890" oninput="render()">
-
-            <label>Logo ပြောင်းရန် (Optional)</label>
+            <label>Logo ပြောင်းလိုပါက (Optional)</label>
             <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
-            
-            <div class="color-picker-group">
-                <label>Theme Color:</label>
-                <input type="color" id="themeColor" value="#1e4598" oninput="render()">
+
+            <div class="btn-group">
+                <button class="btn-reset" onclick="resetForm()">Reset</button>
+                <button class="btn-gen" onclick="render()">Re-Generate</button>
             </div>
 
         </div>
