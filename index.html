@@ -3,55 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thai Bank Card Maker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Pro Bank Card Maker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
+    <div class="main-wrapper">
         <header>
-            <h1>Thai Bank Card Maker</h1>
-            <p>ငွေလွှဲ Account ကဒ် ဒီဇိုင်းပြုလုပ်ရန်</p>
+            <h3>Bank Card Generator Pro</h3>
+            <p>စိတ်ကြိုက် ဒီဇိုင်း (၁၀) မျိုးနှင့် အလွယ်တကူ ပြုလုပ်ပါ</p>
         </header>
 
-        <div class="card-preview-container">
-            <canvas id="cardCanvas" style="display:none;"></canvas>
-            
-            <img id="resultImage" src="" alt="Preview will appear here" style="display:none;">
-            <div id="placeholderText">
-                <p>အောက်တွင် အချက်အလက်များ ဖြည့်ပါ</p>
-            </div>
+        <div class="preview-card">
+            <canvas id="cardCanvas" width="800" height="500" style="display:none;"></canvas>
+            <img id="resultImage" src="" alt="Preview">
+            <div id="loadingText">Generating Preview...</div>
         </div>
+        
+        <p class="download-hint">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press to save)</p>
 
-        <div class="form-control">
-            
-            <label>ဘဏ် ရွေးချယ်ရန် (Bank)</label>
-            <div class="bank-grid" id="bankGrid">
+        <div class="controls">
+
+            <div class="control-group">
+                <label>၁။ ဘဏ်ရွေးပါ (သို့) Logo တင်ပါ</label>
+                <div class="bank-scroll">
+                    </div>
+                
+                <div class="file-upload-box">
+                    <label for="logoUpload" class="custom-file-upload">
+                        <i class="icon">📁</i> ကိုယ်ပိုင် Logo တင်ရန် နှိပ်ပါ
+                    </label>
+                    <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>၂။ အချက်အလက်များ</label>
+                <input type="text" id="nameInput" placeholder="အမည် (ဥပမာ - MR. TINT AUNG KHAING)" oninput="render()">
+                <input type="text" id="acctInput" placeholder="နံပါတ် (ဥပမာ - 000-000-0000)" oninput="render()" maxlength="20">
+            </div>
+
+            <div class="control-group">
+                <label>၃။ ဒီဇိုင်း ရွေးချယ်ရန် (၁၀ မျိုး)</label>
+                <div class="style-grid">
+                    <button onclick="setStyle(0)" class="style-btn active">Clean</button>
+                    <button onclick="setStyle(1)" class="style-btn">Dark</button>
+                    <button onclick="setStyle(2)" class="style-btn">Gradient</button>
+                    <button onclick="setStyle(3)" class="style-btn">Glass</button>
+                    <button onclick="setStyle(4)" class="style-btn">Social</button>
+                    <button onclick="setStyle(5)" class="style-btn">Stripe</button>
+                    <button onclick="setStyle(6)" class="style-btn">Border</button>
+                    <button onclick="setStyle(7)" class="style-btn">Bold</button>
+                    <button onclick="setStyle(8)" class="style-btn">Receipt</button>
+                    <button onclick="setStyle(9)" class="style-btn">Circle</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>၄။ စိတ်ကြိုက် ပြင်ဆင်ရန်</label>
+                
+                <div class="slider-row">
+                    <span>Theme Color:</span>
+                    <input type="color" id="colorPicker" value="#1e4598" oninput="updateColor(this.value)">
                 </div>
 
-            <label>ဒီဇိုင်း ပုံစံ (Design Layout)</label>
-            <select id="themeSelect" onchange="triggerUpdate()">
-                <option value="modern_card">Standard Card (သာမန်ကဒ်)</option>
-                <option value="social_post">Social Media Post (Instagram/FB)</option>
-                <option value="business_cover">Business Cover (Official)</option>
-                <option value="minimalist">Minimalist (ရိုးရှင်းသန့်ပြန့်)</option>
-            </select>
+                <div class="slider-row">
+                    <span>Logo Size:</span>
+                    <input type="range" id="logoSize" min="50" max="250" value="100" oninput="render()">
+                </div>
 
-            <label>အမည် (Name)</label>
-            <input type="text" id="nameInput" placeholder="MR. TINT AUNG KHAING" oninput="triggerUpdate()">
-
-            <label>ဘဏ်နံပါတ် (Account No)</label>
-            <input type="text" id="acctInput" placeholder="000-000-0000" oninput="triggerUpdate()" maxlength="15">
-
-            <div class="button-group">
-                <button class="btn-reset" onclick="resetForm()">ပြန်စမယ် (Reset)</button>
-                <button class="btn-generate" onclick="generateImage()">ပုံထုတ်မည် (Generate)</button>
+                <div class="slider-row">
+                    <span>Text Size:</span>
+                    <input type="range" id="textSize" min="10" max="60" value="30" oninput="render()">
+                </div>
             </div>
-            
-            <div id="downloadSection" style="display:none;">
-                <p class="fb-notice">ပုံကို ဖိနှိပ်ပြီး Save လုပ်ပါ (Long Press to Save)</p>
-            </div>
+
+            <button class="btn-reset" onclick="resetAll()">Reset All</button>
+
         </div>
     </div>
 
