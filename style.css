@@ -128,10 +128,57 @@ body {
 #resultImage {
     width: 100%;
     display: block;
-    pointer-events: auto; /* Important for long-press */
-    -webkit-user-select: none;
-    user-select: none;
+    pointer-events: auto; 
+    /* REMOVED user-select: none; to allow long press context menu */
+    touch-action: auto;
 }
+
+/* --- CROP MODAL STYLES --- */
+.crop-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 20000;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.crop-modal-content {
+    background: var(--md-sys-color-surface);
+    width: 90%; max-width: 500px;
+    border-radius: 16px; padding: 20px;
+    display: flex; flex-direction: column; gap: 16px;
+}
+
+.crop-modal-content h3 { margin: 0; color: var(--md-sys-color-on-surface); }
+
+.img-container {
+    max-height: 60vh; /* Limit height so it fits on mobile */
+    overflow: hidden;
+    background: #333;
+    border-radius: 8px;
+}
+
+.img-container img {
+    max-width: 100%; /* Important for cropper */
+    display: block;
+}
+
+.crop-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+}
+
+.btn-cancel {
+    background: transparent; border: 1px solid var(--md-sys-color-outline);
+    color: var(--md-sys-color-on-surface);
+    padding: 10px 20px; border-radius: 100px; cursor: pointer;
+}
+
+.btn-confirm {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none; padding: 10px 20px; border-radius: 100px;
+    font-weight: bold; cursor: pointer;
+}
+
 
 /* --- Download Button --- */
 .action-buttons {
