@@ -1,5 +1,4 @@
 // --- CONFIGURATION ---
-// Logo Link တွေကို ဒီနေရာမှာ လိုက်ပြင်ပါ (img/kbank.png သို့မဟုတ် http link)
 const banks = [
     { id: 'bbl', name: 'Bangkok Bank', short: 'BBL', thName: 'ธนาคารกรุงเทพ', color: '#1e4598', logo: 'img/bbl.png' },
     { id: 'kbank', name: 'Kasikorn Bank', short: 'KBANK', thName: 'ธนาคารกสิกรไทย', color: '#138f2d', logo: 'img/kbank.png' },
@@ -14,9 +13,9 @@ const banks = [
 
 // State
 let currentBank = banks[0];
-let uploadedLogo = null;
-let logoImgObj = new Image();
-logoImgObj.crossOrigin = "Anonymous"; 
+let uploadedUserImg = null; // Changed: This is now the QR/Profile image
+let bankLogoImg = new Image();
+bankLogoImg.crossOrigin = "Anonymous";
 
 const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
@@ -26,7 +25,24 @@ const imgOutput = document.getElementById('resultImage');
 window.onload = function() {
     initBankGrid();
     loadBankLogo(currentBank);
+    
+    // Check System Dark Mode Preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark-mode');
+        updateThemeIcon();
+    }
 };
+
+function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    updateThemeIcon();
+}
+
+function updateThemeIcon() {
+    const btn = document.getElementById('themeBtn');
+    const isDark = document.body.classList.contains('dark-mode');
+    btn.innerHTML = `<span class="material-symbols-outlined">${isDark ? 'light_mode' : 'dark_mode'}</span>`;
+}
 
 function initBankGrid() {
     const grid = document.getElementById('bankGrid');
@@ -38,7 +54,7 @@ function initBankGrid() {
         if(bank.id === currentBank.id) div.classList.add('active');
         
         div.innerHTML = `
-            <img src="${bank.logo}" alt="${bank.short}" onerror="this.src='https://via.placeholder.com/40?text=${bank.short}'">
+            <img src="${bank.logo}" alt="${bank.short}" onerror="this.src='https://via.placeholder.com/40'">
             <span>${bank.short}</span>
         `;
         
@@ -55,14 +71,9 @@ function selectBank(bank, div) {
 }
 
 function loadBankLogo(bank) {
-    // If user hasn't uploaded a custom logo, use the bank's default logo
-    if (!uploadedLogo) {
-        logoImgObj.src = bank.logo;
-        logoImgObj.onload = () => render();
-        logoImgObj.onerror = () => render(); 
-    } else {
-        render();
-    }
+    bankLogoImg.src = bank.logo;
+    bankLogoImg.onload = () => render();
+    bankLogoImg.onerror = () => render();
 }
 
 function handleLogoUpload(input) {
@@ -70,7 +81,7 @@ function handleLogoUpload(input) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
-            img.onload = () => { uploadedLogo = img; render(); };
+            img.onload = () => { uploadedUserImg = img; render(); };
             img.src = e.target.result;
         }
         reader.readAsDataURL(input.files[0]);
@@ -81,7 +92,7 @@ function resetForm() {
     document.getElementById('nameInput').value = "";
     document.getElementById('acctInput').value = "";
     document.getElementById('logoUpload').value = "";
-    uploadedLogo = null;
+    uploadedUserImg = null;
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
@@ -90,8 +101,10 @@ function render() {
     const nameInput = document.getElementById('nameInput');
     const acctInput = document.getElementById('acctInput');
     
-    const name = (nameInput.value || nameInput.placeholder).toUpperCase();
-    const acct = acctInput.value || acctInput.placeholder;
+    // Use user input, if empty use placeholders from HTML for PREVIEW, 
+    // but visually it's cleaner to use placeholder text if empty.
+    const name = (nameInput.value) ? nameInput.value.toUpperCase() : "NAME HERE";
+    const acct = (acctInput.value) ? acctInput.value : "000-000-0000";
     const style = document.getElementById('styleSelect').value;
     
     canvas.width = 1000;
@@ -109,10 +122,8 @@ function render() {
         drawGradient(w, h, name, acct);
     } else if (style === 'layout_material') {
         drawMaterial(w, h, name, acct);
-    } else if (style === 'layout_modern') {
-        drawModern(w, h, name, acct);
     } else {
-        drawMinimal(w, h, name, acct);
+        drawModern(w, h, name, acct);
     }
 
     imgOutput.src = canvas.toDataURL("image/png");
@@ -127,70 +138,70 @@ function drawBBLStyle(w, h, name, acct) {
     ctx.fillRect(0,0,w,h);
 
     // --- Header ---
-    // Auto-resize font for long bank names (KBANK, CIMBT)
-    let titleFontSize = 130;
-    if (currentBank.short.length > 3) titleFontSize = 90; // Shrink for KBANK, CIMBT
     
-    ctx.fillStyle = mainColor;
-    ctx.font = `bold ${titleFontSize}px Roboto, Arial`;
-    ctx.textAlign = "left";
-    // Adjust Y position slightly if font is smaller to keep it centered
-    let titleY = (currentBank.short.length > 3) ? 140 : 150;
-    ctx.fillText(currentBank.short, 50, titleY);
+    // 1. LEFT SIDE: Bank Logo (Replaced "BBL" text)
+    // Draw Bank Logo Large
+    if (bankLogoImg.complete && bankLogoImg.naturalHeight !== 0) {
+        ctx.drawImage(bankLogoImg, 50, 40, 150, 150);
+    } else {
+        // Fallback Circle
+        ctx.fillStyle = mainColor;
+        ctx.beginPath(); ctx.arc(125, 115, 70, 0, Math.PI*2); ctx.fill();
+    }
 
     // Divider
     ctx.fillStyle = "#ccc";
-    ctx.fillRect(320, 50, 4, 120);
+    ctx.fillRect(230, 50, 4, 120);
 
-    // Thai Name
+    // Bank Names (Shifted slightly right)
+    let textX = 260;
+    
     ctx.fillStyle = mainColor;
     ctx.font = "bold 55px Kanit, Arial"; 
-    ctx.fillText(currentBank.thName || "ธนาคาร", 350, 100);
+    ctx.textAlign = "left";
+    ctx.fillText(currentBank.thName || "ธนาคาร", textX, 100);
     
-    // English Name
     ctx.fillStyle = "#666";
     ctx.font = "bold 35px Roboto, Arial";
-    ctx.fillText(currentBank.name.toUpperCase(), 350, 150);
+    ctx.fillText(currentBank.name.toUpperCase(), textX, 150);
 
     // Orange Line
     ctx.fillStyle = "#f97316"; 
-    ctx.fillRect(350, 115, 330, 5);
+    ctx.fillRect(textX, 115, 330, 5);
 
-    // --- Right Logo Box (Updated to use Real Logo) ---
+    // --- RIGHT SIDE: User Upload Box (QR / Profile) ---
     const boxSize = 160;
     const boxX = w - 210;
     const boxY = 40;
     
-    // 1. Colored Rounded Rect
-    ctx.fillStyle = mainColor;
+    // 1. Box Container
+    ctx.fillStyle = "#f8f9fa"; // Very light grey bg for placeholder
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxSize, boxSize, 20);
     ctx.fill();
     
-    // 2. White Border inside
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 2;
+    // 2. Border
+    ctx.strokeStyle = mainColor;
+    ctx.lineWidth = 4;
     ctx.stroke();
 
-    // 3. Draw REAL Logo Inside
-    // Use uploaded logo if exists, otherwise use bank logo from link
-    let drawImg = uploadedLogo ? uploadedLogo : logoImgObj;
-    
-    if (drawImg.complete && drawImg.naturalHeight !== 0) {
+    // 3. Draw User Image (QR/Profile)
+    if (uploadedUserImg) {
         ctx.save();
-        ctx.clip(); // Clip images to the rounded box
-        
-        // Draw image with padding
-        let padding = 20;
-        ctx.drawImage(drawImg, boxX + padding, boxY + padding, boxSize - (padding*2), boxSize - (padding*2));
-        
+        ctx.clip(); // Clip to box
+        ctx.drawImage(uploadedUserImg, boxX, boxY, boxSize, boxSize);
         ctx.restore();
     } else {
-        // Fallback if image fails
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 40px Arial";
+        // Placeholder Icon (QR style)
+        ctx.fillStyle = "#ccc";
+        ctx.font = "bold 20px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(currentBank.short, boxX + boxSize/2, boxY + boxSize/2 + 10);
+        ctx.fillText("QR/PHOTO", boxX + boxSize/2, boxY + boxSize/2);
+        // Simple QR mock
+        ctx.fillStyle = mainColor;
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(boxX+40, boxY+40, boxSize-80, boxSize-80);
+        ctx.globalAlpha = 1.0;
     }
 
     // --- Bank Number Row ---
@@ -217,7 +228,7 @@ function drawBBLStyle(w, h, name, acct) {
     ctx.fillText(name, 90, 485);
 }
 
-// (Other drawing functions - Gradient, Modern, etc. remain the same as previous)
+// Other styles adapt to use the new User Image logic
 function drawGradient(w, h, name, acct) {
     let grd = ctx.createLinearGradient(0, 0, w, h);
     grd.addColorStop(0, currentBank.color);
@@ -229,7 +240,9 @@ function drawGradient(w, h, name, acct) {
     ctx.beginPath(); ctx.roundRect(100, 100, w-200, h-200, 30); ctx.fill();
     ctx.shadowBlur = 0;
 
-    drawLogoHelper(w/2 - 50, 50, 100);
+    // Center: User Image or Bank Logo if no user image
+    let centerImg = uploadedUserImg ? uploadedUserImg : bankLogoImg;
+    drawCenteredImg(centerImg, w/2 - 60, 40, 120);
 
     ctx.textAlign = "center";
     ctx.fillStyle = currentBank.color;
@@ -249,7 +262,17 @@ function drawMaterial(w, h, name, acct) {
     ctx.fillStyle = currentBank.color;
     ctx.beginPath(); ctx.roundRect(80, 80, w-160, 20, [16,16,0,0]); ctx.fill();
 
-    drawLogoHelper(120, 140, 80);
+    // Left Logo: Bank Logo
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 140, 80, 80);
+    
+    // Right: QR/Photo if available
+    if(uploadedUserImg) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(w-160, 180, 40, 0, Math.PI*2); ctx.clip();
+        ctx.drawImage(uploadedUserImg, w-200, 140, 80, 80);
+        ctx.restore();
+    }
+
     ctx.textAlign = "left";
     ctx.fillStyle = "#202124"; ctx.font = "bold 40px Roboto";
     ctx.fillText(currentBank.name, 220, 180);
@@ -263,38 +286,29 @@ function drawMaterial(w, h, name, acct) {
 function drawModern(w, h, name, acct) {
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
     ctx.fillStyle = currentBank.color; ctx.fillRect(0,0, 30, h);
-    drawLogoHelper(80, 50, 100);
+    
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 60, 50, 100, 100);
+
+    // QR Box
+    if(uploadedUserImg) {
+        ctx.drawImage(uploadedUserImg, w-180, 50, 120, 120);
+    }
+
     ctx.textAlign = "left"; ctx.fillStyle = "#000"; ctx.font = "bold 40px Roboto";
-    ctx.fillText(currentBank.name, 200, 115);
+    ctx.fillText(currentBank.name, 190, 115);
     ctx.fillStyle = currentBank.color; ctx.font = "bold 80px Roboto";
     ctx.fillText(acct, 80, 320);
     ctx.fillStyle = "#000"; ctx.font = "bold 50px Padauk";
     ctx.fillText(name, 80, 470);
 }
 
-function drawMinimal(w, h, name, acct) {
-    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle = currentBank.color; ctx.lineWidth = 10;
-    ctx.strokeRect(20,20,w-40,h-40);
-    drawLogoHelper(w/2 - 60, 60, 120);
-    ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.font = "bold 70px Roboto";
-    ctx.fillText(acct, w/2, 300);
-    ctx.fillStyle = currentBank.color; ctx.font = "bold 50px Padauk";
-    ctx.fillText(name, w/2, 400);
-}
-
-function drawLogoHelper(x, y, size) {
-    let drawImg = uploadedLogo ? uploadedLogo : logoImgObj;
-    if (drawImg.complete && drawImg.naturalHeight !== 0) {
-        ctx.drawImage(drawImg, x, y, size, size);
-    } else {
-        ctx.fillStyle = currentBank.color;
-        ctx.beginPath(); ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.font = `bold ${size/3}px Arial`; ctx.textAlign = "center";
-        ctx.fillText(currentBank.short, x + size/2, y + size/2 + size/10);
+function drawCenteredImg(img, x, y, size) {
+    if(img && img.complete && img.naturalHeight !== 0) {
+        ctx.drawImage(img, x, y, size, size);
     }
 }
 
+// Polyfill
 if (!ctx.roundRect) {
     ctx.roundRect = function(x, y, w, h, r) { ctx.rect(x,y,w,h); return this; }
 }
