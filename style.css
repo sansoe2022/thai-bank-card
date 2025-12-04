@@ -1,0 +1,139 @@
+:root {
+    --primary-color: #3b82f6;
+    --bg-color: #f0f4f8;
+}
+
+body {
+    font-family: 'Roboto', 'Padauk', sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+header p {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 0;
+}
+
+/* Card Preview Area */
+.card-preview {
+    width: 100%;
+    height: auto;
+    min-height: 200px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 2px dashed #cbd5e1;
+}
+
+#resultImage {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#placeholderText {
+    color: #94a3b8;
+}
+
+/* Inputs */
+label {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+    color: #333;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box; /* Fixes padding issue */
+}
+
+/* Bank Selector Buttons */
+.bank-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+}
+
+.bank-option {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: all 0.3s;
+}
+
+.bank-option.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Buttons */
+.btn-generate {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-download {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    background-color: #10b981; /* Green */
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.fb-notice {
+    font-size: 12px;
+    color: #ef4444; /* Red */
+    text-align: center;
+    margin-bottom: 5px;
+}
