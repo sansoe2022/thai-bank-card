@@ -1,134 +1,188 @@
 :root {
-    --primary: #1e4598;
-    --bg: #f8f9fa;
+    /* Light Mode Tokens (Material 3 Baseline) */
+    --md-sys-color-primary: #6750a4;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #eaddff;
+    --md-sys-color-background: #fdfcff;
+    --md-sys-color-surface: #fdfcff;
+    --md-sys-color-surface-container: #f3f3f6;
+    --md-sys-color-on-surface: #1c1b1f;
+    --md-sys-color-outline: #79747e;
+    --md-sys-shape-corner-medium: 16px;
+    --md-sys-shape-corner-large: 24px;
+    --md-elevation-1: 0 2px 6px rgba(0,0,0,0.05);
+    --md-elevation-2: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Dark Mode Tokens */
+body.dark-mode {
+    --md-sys-color-primary: #d0bcff;
+    --md-sys-color-on-primary: #381e72;
+    --md-sys-color-primary-container: #4f378b;
+    --md-sys-color-background: #141218;
+    --md-sys-color-surface: #141218;
+    --md-sys-color-surface-container: #211f26;
+    --md-sys-color-on-surface: #e6e1e5;
+    --md-sys-color-outline: #938f99;
 }
 
 body {
-    font-family: 'Roboto', 'Padauk', sans-serif;
-    background-color: var(--bg);
     margin: 0;
-    padding: 10px;
+    font-family: 'Roboto', 'Padauk', sans-serif;
+    background-color: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-surface);
+    transition: background-color 0.3s, color 0.3s;
 }
 
-.main-wrapper {
-    max-width: 500px;
+.app-container {
+    max-width: 480px;
     margin: 0 auto;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    overflow: hidden;
-    padding-bottom: 20px;
-}
-
-header {
-    background: white;
-    padding: 20px 20px 10px;
-    text-align: center;
-}
-header h3 { margin: 0; color: #333; font-size: 1.2rem; }
-header p { margin: 5px 0 0; color: #666; font-size: 13px; font-family: 'Padauk'; }
-
-/* Preview Box - Cleaned up */
-.preview-box {
-    background: #e9ecef;
-    min-height: 250px;
+    min-height: 100vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 15px;
-    position: relative;
-    /* Removed loadingText styling as it's gone */
+    flex-direction: column;
 }
 
-#resultImage {
+/* Top App Bar */
+.top-app-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--md-sys-color-surface);
+}
+.header-content h3 { margin: 0; font-size: 22px; }
+.header-content p { margin: 0; font-size: 14px; opacity: 0.7; }
+
+.icon-btn {
+    background: none; border: none;
+    color: var(--md-sys-color-on-surface);
+    padding: 8px; border-radius: 50%;
+    cursor: pointer;
+}
+.icon-btn:hover { background-color: var(--md-sys-color-surface-container); }
+
+/* Preview */
+.content-body { padding: 16px; }
+
+.preview-card-container {
+    background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-large);
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: var(--md-elevation-1);
+}
+
+.preview-box {
     width: 100%;
     border-radius: 12px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    display: block;
-    background: white;
+    overflow: hidden;
+    background: #fff; /* Always white bg for image preview context */
+    box-shadow: var(--md-elevation-1);
+    margin-bottom: 12px;
 }
+#resultImage { width: 100%; display: block; }
 
-.hint {
-    text-align: center;
-    font-size: 12px;
-    color: #15803d;
-    background: #dcfce7;
-    padding: 8px;
-    margin: 0;
-    font-weight: bold;
+.hint-chip {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 12px; color: var(--md-sys-color-primary);
+    background: var(--md-sys-color-primary-container);
+    color: #1d192b; /* Dark text on light container */
+    padding: 8px 16px; border-radius: 100px;
+    width: fit-content; margin: 0 auto; font-weight: bold;
 }
 
 /* Controls */
-.controls { padding: 20px; }
-
-label {
-    font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 10px;
-    display: block;
-    color: #334155;
-    margin-top: 15px;
-    font-family: 'Padauk', sans-serif;
+.controls-panel {
+    display: flex; flex-direction: column; gap: 24px;
 }
 
-/* Bank Grid - Logos */
+.section-label {
+    font-size: 14px; font-weight: bold;
+    color: var(--md-sys-color-primary);
+    margin-bottom: 12px; display: block;
+}
+
+/* Bank Grid */
 .bank-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 cols looks better for logos */
-    gap: 10px;
-    margin-bottom: 15px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
 }
-
 .bank-item {
-    aspect-ratio: 1;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border: 2px solid #e2e8f0;
-    background: #fff;
-    transition: all 0.2s;
-    padding: 5px;
+    aspect-ratio: 1; border-radius: 12px;
+    background: var(--md-sys-color-surface-container);
+    border: 1px solid transparent;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
 }
-
-.bank-item img {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    margin-bottom: 4px;
-}
-
-.bank-item span {
-    font-size: 10px;
-    font-weight: bold;
-    color: #64748b;
-}
-
+.bank-item img { width: 32px; height: 32px; object-fit: contain; margin-bottom: 2px; }
+.bank-item span { font-size: 9px; opacity: 0.8; }
 .bank-item.active {
-    border-color: var(--primary);
-    background: #eff6ff;
-    box-shadow: 0 0 0 2px rgba(30, 69, 152, 0.2);
+    background-color: var(--md-sys-color-primary-container);
+    border-color: var(--md-sys-color-primary);
+    color: #1d192b;
 }
 
-/* Inputs */
-input, select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    box-sizing: border-box;
+/* M3 Inputs */
+.md-input-group {
+    position: relative; margin-bottom: 16px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid var(--md-sys-color-outline);
+}
+.md-input-group input {
+    width: 100%; padding: 24px 16px 8px;
+    border: none; background: none;
+    font-size: 16px; color: var(--md-sys-color-on-surface);
     font-family: 'Padauk', sans-serif;
-    font-size: 15px;
-    margin-bottom: 5px;
+    outline: none; box-sizing: border-box;
 }
-input:focus { outline: none; border-color: var(--primary); }
+.md-input-group label {
+    position: absolute; top: 16px; left: 16px;
+    font-size: 16px; color: var(--md-sys-color-outline);
+    transition: 0.2s; pointer-events: none;
+}
+.md-input-group input:focus ~ label,
+.md-input-group input:not(:placeholder-shown) ~ label {
+    top: 4px; font-size: 12px; color: var(--md-sys-color-primary);
+}
+.md-input-group:focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
 
-/* Buttons */
-.btn-group { margin-top: 20px; }
-.btn-reset { 
-    width: 100%; padding: 12px; border: none; 
-    border-radius: 8px; font-weight: bold; cursor: pointer;
-    background: #ef4444; color: white; 
+/* Upload Box */
+.upload-container {
+    border: 2px dashed var(--md-sys-color-outline);
+    border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; gap: 16px;
+    cursor: pointer; opacity: 0.8; transition: 0.2s;
 }
+.upload-container:hover { opacity: 1; background: var(--md-sys-color-surface-container); }
+.upload-icon { color: var(--md-sys-color-primary); }
+.upload-text strong { display: block; font-size: 14px; }
+.upload-text span { font-size: 12px; opacity: 0.7; }
+
+/* Select */
+.md-select-wrapper {
+    position: relative; margin-bottom: 16px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: 8px;
+}
+select {
+    width: 100%; padding: 16px; border: none; background: none;
+    font-size: 16px; color: var(--md-sys-color-on-surface);
+    appearance: none; outline: none;
+}
+.arrow {
+    position: absolute; right: 16px; top: 16px;
+    pointer-events: none; opacity: 0.6;
+}
+
+/* Button */
+.btn-filled {
+    width: 100%; padding: 14px;
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+    border: none; border-radius: 100px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: var(--md-elevation-1);
+}
+.btn-filled:active { box-shadow: none; opacity: 0.9; }
