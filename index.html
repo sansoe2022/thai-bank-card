@@ -3,84 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Bank Card Maker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Ultimate Card Maker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600&family=Padauk:wght@400;700&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="main-wrapper">
         <header>
-            <h3>Bank Card Generator Pro</h3>
-            <p>စိတ်ကြိုက် ဒီဇိုင်း (၁၀) မျိုးနှင့် အလွယ်တကူ ပြုလုပ်ပါ</p>
+            <h3>Bank Card Maker Pro</h3>
         </header>
 
-        <div class="preview-card">
-            <canvas id="cardCanvas" width="800" height="500" style="display:none;"></canvas>
-            <img id="resultImage" src="" alt="Preview">
-            <div id="loadingText">Generating Preview...</div>
+        <div class="preview-container">
+            <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
+            <img id="resultImage" src="" alt="Card Preview">
         </div>
-        
-        <p class="download-hint">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press to save)</p>
+        <p class="hint-text">ပုံကို save ရန် ပုံပေါ်တွင် ဖိနှိပ်ထားပါ (Long press image to save)</p>
 
         <div class="controls">
 
-            <div class="control-group">
-                <label>၁။ ဘဏ်ရွေးပါ (သို့) Logo တင်ပါ</label>
-                <div class="bank-scroll">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('template')">Templates</button>
+                <button class="tab-btn" onclick="switchTab('custom')">Custom Edit</button>
+            </div>
+
+            <div id="tab-template" class="tab-content active">
+                
+                <label>၁။ ဒီဇိုင်း ရွေးချယ်ရန် (Style)</label>
+                <select id="styleSelect" onchange="updateStyle()">
+                    <option value="bbl_classic">BBL Classic (ပုံပါအတိုင်း)</option>
+                    <option value="modern_clean">Modern Clean</option>
+                    <option value="social_post">Social Media Post</option>
+                    <option value="gold_vip">Gold VIP</option>
+                    <option value="minimal_border">Minimal Border</option>
+                </select>
+
+                <label>၂။ ဘဏ် ရွေးချယ်ရန်</label>
+                <div class="bank-scroll" id="bankList">
                     </div>
                 
-                <div class="file-upload-box">
-                    <label for="logoUpload" class="custom-file-upload">
-                        <i class="icon">📁</i> ကိုယ်ပိုင် Logo တင်ရန် နှိပ်ပါ
-                    </label>
+                <div class="input-group">
+                    <label>Logo Upload (Optional)</label>
                     <input type="file" id="logoUpload" accept="image/*" onchange="handleLogoUpload(this)">
                 </div>
-            </div>
 
-            <div class="control-group">
-                <label>၂။ အချက်အလက်များ</label>
-                <input type="text" id="nameInput" placeholder="အမည် (ဥပမာ - MR. TINT AUNG KHAING)" oninput="render()">
-                <input type="text" id="acctInput" placeholder="နံပါတ် (ဥပမာ - 000-000-0000)" oninput="render()" maxlength="20">
-            </div>
+                <div class="input-group">
+                    <label>အမည် (Name)</label>
+                    <input type="text" id="nameInput" placeholder="MR. SAN KYAW SOE" oninput="render()">
+                </div>
 
-            <div class="control-group">
-                <label>၃။ ဒီဇိုင်း ရွေးချယ်ရန် (၁၀ မျိုး)</label>
-                <div class="style-grid">
-                    <button onclick="setStyle(0)" class="style-btn active">Clean</button>
-                    <button onclick="setStyle(1)" class="style-btn">Dark</button>
-                    <button onclick="setStyle(2)" class="style-btn">Gradient</button>
-                    <button onclick="setStyle(3)" class="style-btn">Glass</button>
-                    <button onclick="setStyle(4)" class="style-btn">Social</button>
-                    <button onclick="setStyle(5)" class="style-btn">Stripe</button>
-                    <button onclick="setStyle(6)" class="style-btn">Border</button>
-                    <button onclick="setStyle(7)" class="style-btn">Bold</button>
-                    <button onclick="setStyle(8)" class="style-btn">Receipt</button>
-                    <button onclick="setStyle(9)" class="style-btn">Circle</button>
+                <div class="input-group">
+                    <label>အကောင့်နံပါတ် (Account No)</label>
+                    <input type="text" id="acctInput" placeholder="123-456-7890" oninput="render()">
                 </div>
             </div>
 
-            <div class="control-group">
-                <label>၄။ စိတ်ကြိုက် ပြင်ဆင်ရန်</label>
-                
-                <div class="slider-row">
-                    <span>Theme Color:</span>
-                    <input type="color" id="colorPicker" value="#1e4598" oninput="updateColor(this.value)">
-                </div>
+            <div id="tab-custom" class="tab-content">
+                <div class="custom-controls">
+                    <label>⚙️ Custom Settings</label>
+                    
+                    <div class="input-group">
+                        <label>နောက်ခံပုံ တင်ရန် (Background Image)</label>
+                        <input type="file" id="bgUpload" accept="image/*" onchange="handleBgUpload(this)">
+                        <small>နောက်ခံပုံတင်ပါက Template အရောင်ပျောက်သွားပါမည်</small>
+                    </div>
 
-                <div class="slider-row">
-                    <span>Logo Size:</span>
-                    <input type="range" id="logoSize" min="50" max="250" value="100" oninput="render()">
-                </div>
+                    <div class="slider-group">
+                        <label>Name Position (X / Y)</label>
+                        <input type="range" id="nameX" min="0" max="1000" value="50" oninput="render()">
+                        <input type="range" id="nameY" min="0" max="600" value="450" oninput="render()">
+                    </div>
 
-                <div class="slider-row">
-                    <span>Text Size:</span>
-                    <input type="range" id="textSize" min="10" max="60" value="30" oninput="render()">
+                    <div class="slider-group">
+                        <label>Account No Position (X / Y)</label>
+                        <input type="range" id="acctX" min="0" max="1000" value="350" oninput="render()">
+                        <input type="range" id="acctY" min="0" max="600" value="280" oninput="render()">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>Font Size</label>
+                        <input type="range" id="globalScale" min="50" max="200" value="100" oninput="render()">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <label>Text Color</label>
+                        <input type="color" id="customTextColor" value="#000000" oninput="render()">
+                    </div>
                 </div>
             </div>
 
             <button class="btn-reset" onclick="resetAll()">Reset All</button>
-
         </div>
     </div>
 
