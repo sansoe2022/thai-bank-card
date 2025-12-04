@@ -1,350 +1,318 @@
-// Bank Data
+// Bank Configurations
 const banks = [
-    { id: 'bbl', name: 'BBL', color: '#1e4598' },
-    { id: 'kbank', name: 'KBANK', color: '#138f2d' },
-    { id: 'scb', name: 'SCB', color: '#4e2a84' },
-    { id: 'ktb', name: 'KTB', color: '#00a5e3' },
-    { id: 'bay', name: 'BAY', color: '#fec43b' },
-    { id: 'ttb', name: 'TTB', color: '#0056b8' },
-    { id: 'uob', name: 'UOB', color: '#0b2361' },
-    { id: 'gsb', name: 'GSB', color: '#eb008b' },
-    { id: 'other', name: 'Other', color: '#333333' }
+    { id: 'bbl', name: 'BBL', thName: 'ธนาคารกรุงเทพ', color: '#1e4598' },
+    { id: 'kbank', name: 'KBANK', thName: 'ธนาคารกสิกรไทย', color: '#138f2d' },
+    { id: 'scb', name: 'SCB', thName: 'ธนาคารไทยพาณิชย์', color: '#4e2a84' },
+    { id: 'ktb', name: 'KTB', thName: 'ธนาคารกรุงไทย', color: '#00a5e3' },
+    { id: 'bay', name: 'BAY', thName: 'ธนาคารกรุงศรี', color: '#fec43b', txt: '#4e2a84' },
+    { id: 'ttb', name: 'TTB', thName: 'ทีเอ็มบีธนชาต', color: '#0056b8' },
+    { id: 'uob', name: 'UOB', thName: 'ยูโอบี', color: '#0b2361' },
+    { id: 'gsb', name: 'GSB', thName: 'ออมสิน', color: '#eb008b' }
 ];
 
-// State Management
+// App State
 let state = {
     bank: banks[0],
-    styleIndex: 0,
-    customLogo: null, // holds DataURL of uploaded image
-    logoSize: 100,
-    textSize: 30,
-    userColor: null // Overrides bank color if set
+    style: 'bbl_classic',
+    uploadedLogo: null,
+    uploadedBg: null,
+    // Custom positioning defaults
+    custom: {
+        active: false,
+        nameX: 50, nameY: 450,
+        acctX: 350, acctY: 280,
+        scale: 1,
+        color: '#000000'
+    }
 };
 
 const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
-const imgResult = document.getElementById('resultImage');
 
-// --- INITIALIZATION ---
+// --- Initialization ---
 function init() {
     renderBankList();
     render();
 }
 
 function renderBankList() {
-    const container = document.querySelector('.bank-scroll');
-    container.innerHTML = '';
-    
+    const list = document.getElementById('bankList');
+    list.innerHTML = '';
     banks.forEach(bank => {
         const div = document.createElement('div');
-        div.className = `bank-badge ${state.bank.id === bank.id ? 'active' : ''}`;
-        div.innerHTML = `<span>${bank.name}</span>`;
-        // Create a simple colored circle as icon
-        div.style.borderTop = `3px solid ${bank.color}`;
-        
+        div.className = `bank-item ${state.bank.id === bank.id ? 'active' : ''}`;
+        div.style.backgroundColor = bank.color;
+        div.style.color = bank.txt || '#fff';
+        div.innerText = bank.name;
         div.onclick = () => {
             state.bank = bank;
-            state.userColor = null; // Reset custom color on bank switch
-            document.getElementById('colorPicker').value = bank.color;
-            // Update UI Active State
-            document.querySelectorAll('.bank-badge').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.bank-item').forEach(b => b.classList.remove('active'));
             div.classList.add('active');
             render();
         };
-        container.appendChild(div);
+        list.appendChild(div);
     });
 }
 
-// --- CONTROLS ---
-
-function setStyle(index) {
-    state.styleIndex = index;
-    document.querySelectorAll('.style-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', i === index);
-    });
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+    
+    // Activate
+    event.target.classList.add('active');
+    document.getElementById(`tab-${tabName}`).style.display = 'block';
+    
+    // Toggle custom mode state
+    state.custom.active = (tabName === 'custom');
     render();
 }
 
-function updateColor(color) {
-    state.userColor = color;
+function updateStyle() {
+    state.style = document.getElementById('styleSelect').value;
     render();
 }
 
+// --- File Handlers ---
 function handleLogoUpload(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = () => {
-                state.customLogo = img;
-                render();
-            };
-            img.src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => { state.uploadedLogo = img; render(); };
+        img.src = e.target.result;
+    };
+    if(input.files[0]) reader.readAsDataURL(input.files[0]);
 }
 
-function resetAll() {
-    document.getElementById('nameInput').value = '';
-    document.getElementById('acctInput').value = '';
-    state.customLogo = null;
-    state.styleIndex = 0;
-    state.userColor = null;
-    state.logoSize = 100;
-    state.textSize = 30;
-    document.getElementById('logoSize').value = 100;
-    document.getElementById('textSize').value = 30;
-    document.getElementById('logoUpload').value = ''; // clear file
-    
-    // Reset Bank UI
-    const firstBank = document.querySelector('.bank-badge');
-    if(firstBank) firstBank.click();
-    
-    // Reset Style UI
-    setStyle(0);
+function handleBgUpload(input) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => { state.uploadedBg = img; render(); };
+        img.src = e.target.result;
+    };
+    if(input.files[0]) reader.readAsDataURL(input.files[0]);
 }
 
-// --- RENDER ENGINE ---
-
+// --- RENDER LOGIC ---
 function render() {
-    // 1. Setup Variables
-    const name = document.getElementById('nameInput').value || "ACCOUNT NAME";
+    // Get Inputs
+    const name = document.getElementById('nameInput').value.toUpperCase() || "NAME HERE";
     const acct = document.getElementById('acctInput').value || "000-000-0000";
-    const primaryColor = state.userColor || state.bank.color;
-    const logoScale = parseInt(document.getElementById('logoSize').value) / 100; // 0.5 to 2.5
-    const textScale = parseInt(document.getElementById('textSize').value) / 30; 
+    
+    // Get Custom Sliders
+    state.custom.nameX = parseInt(document.getElementById('nameX').value);
+    state.custom.nameY = parseInt(document.getElementById('nameY').value);
+    state.custom.acctX = parseInt(document.getElementById('acctX').value);
+    state.custom.acctY = parseInt(document.getElementById('acctY').value);
+    state.custom.scale = parseInt(document.getElementById('globalScale').value) / 100;
+    state.custom.color = document.getElementById('customTextColor').value;
 
-    // Canvas Size
-    canvas.width = 1000;
-    canvas.height = 600;
     const w = canvas.width;
     const h = canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
+    ctx.clearRect(0,0,w,h);
 
-    // Reset
-    ctx.clearRect(0, 0, w, h);
-
-    // 2. DRAW BACKGROUND based on Style
-    switch(state.styleIndex) {
-        case 0: // Clean
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = primaryColor;
-            ctx.fillRect(0,0,20,h); // Side bar
-            break;
-            
-        case 1: // Dark
-            ctx.fillStyle = "#1e1e1e";
-            ctx.fillRect(0,0,w,h);
-            // Gold accent
-            ctx.strokeStyle = "#D4AF37";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(30,30,w-60,h-60);
-            break;
-
-        case 2: // Gradient
-            let grd = ctx.createLinearGradient(0,0,w,h);
-            grd.addColorStop(0, primaryColor);
-            grd.addColorStop(1, "#ffffff");
-            ctx.fillStyle = grd;
-            ctx.fillRect(0,0,w,h);
-            break;
-
-        case 3: // Glass
-            // Image bg placeholder or color
-            ctx.fillStyle = primaryColor;
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = "rgba(255,255,255,0.2)";
-            ctx.beginPath(); ctx.arc(0,0,400,0,Math.PI*2); ctx.fill();
-            // Glass Box
-            ctx.fillStyle = "rgba(255,255,255,0.8)";
-            ctx.shadowBlur = 20; ctx.shadowColor = "rgba(0,0,0,0.2)";
-            ctx.roundRect(100, 100, w-200, h-200, 20);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            break;
-
-        case 4: // Social (Square-ish focus)
-            ctx.fillStyle = "#f3f4f6";
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = "#ffffff";
-            ctx.shadowColor = "#ddd"; ctx.shadowBlur = 10;
-            ctx.roundRect(cx-300, 50, 600, h-100, 30);
-            ctx.fill(); ctx.shadowBlur = 0;
-            // Top Header
-            ctx.fillStyle = primaryColor;
-            ctx.beginPath();
-            ctx.roundRect(cx-300, 50, 600, 150, [30,30,0,0]);
-            ctx.fill();
-            break;
-
-        case 5: // Stripe
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = primaryColor;
-            ctx.transform(1, 0, -0.3, 1, 0, 0); // Skew
-            ctx.fillRect(200, 0, 300, h);
-            ctx.resetTransform();
-            break;
-
-        case 6: // Border
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0,0,w,h);
-            ctx.strokeStyle = primaryColor;
-            ctx.lineWidth = 20;
-            ctx.strokeRect(0,0,w,h);
-            break;
-
-        case 7: // Bold
-            ctx.fillStyle = primaryColor;
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(50, 180, w-100, h-230);
-            break;
-
-        case 8: // Receipt
-            ctx.fillStyle = "#eee";
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = "#fff";
-            ctx.shadowColor="#ccc"; ctx.shadowBlur=5;
-            // Zigzag bottom logic omitted for brevity, using simple rect
-            ctx.fillRect(200, 50, 600, h-100);
-            ctx.shadowBlur=0;
-            ctx.strokeStyle = "#ddd";
-            ctx.beginPath(); ctx.moveTo(250, 200); ctx.lineTo(750, 200); ctx.stroke();
-            break;
-
-        case 9: // Circle
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(0,0,w,h);
-            ctx.fillStyle = primaryColor;
-            ctx.beginPath(); ctx.arc(w, 0, 400, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(0, h, 200, 0, Math.PI*2); ctx.fill();
-            break;
-    }
-
-    // 3. TEXT & LOGO PLACEMENT CONFIG
-    // We define text colors and positions based on style
-    let txtColor = "#333";
-    let labelColor = "#777";
-    let align = "left";
-    let baseX = 80; 
-    let baseY = 250;
-    
-    if(state.styleIndex === 1) { txtColor = "#D4AF37"; labelColor = "#aaa"; } // Dark
-    if(state.styleIndex === 4) { align = "center"; baseX = cx; baseY = 320; } // Social
-    if(state.styleIndex === 7) { baseX = 80; baseY = 280; } // Bold
-    if(state.styleIndex === 8) { align = "center"; baseX = cx; baseY = 300; } // Receipt
-
-    // 4. DRAW LOGO
-    const logoBaseSize = 100 * logoScale;
-    let logoX = 80;
-    let logoY = 50;
-
-    if(align === "center") {
-        logoX = cx - (logoBaseSize/2);
-        logoY = (state.styleIndex === 4) ? 75 : 80;
-    } else if (state.styleIndex === 3) {
-        logoX = 140; logoY = 130; // Glass inner
-    }
-
-    if (state.customLogo) {
-        // Draw Uploaded Image
-        ctx.save();
-        // Optional: Make it circular
-        roundedImage(ctx, logoX, logoY, logoBaseSize, logoBaseSize, 10);
-        ctx.drawImage(state.customLogo, logoX, logoY, logoBaseSize, logoBaseSize);
-        ctx.restore();
+    // 1. DRAW BACKGROUND
+    if (state.uploadedBg && state.custom.active) {
+        ctx.drawImage(state.uploadedBg, 0, 0, w, h);
     } else {
-        // Draw Fallback Circle with Text (No more broken links!)
-        ctx.fillStyle = (state.styleIndex === 4 || state.styleIndex === 7) ? "#fff" : primaryColor;
-        
-        // Adjust for Dark mode
-        if(state.styleIndex === 1) ctx.fillStyle = "#D4AF37";
-
-        ctx.beginPath();
-        ctx.arc(logoX + logoBaseSize/2, logoY + logoBaseSize/2, logoBaseSize/2, 0, Math.PI*2);
-        ctx.fill();
-        
-        ctx.fillStyle = (state.styleIndex === 4 || state.styleIndex === 7) ? primaryColor : "#fff";
-        if(state.styleIndex === 1) ctx.fillStyle = "#000";
-
-        ctx.font = `bold ${logoBaseSize * 0.4}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(state.bank.name, logoX + logoBaseSize/2, logoY + logoBaseSize/2);
+        drawBackground(w, h);
     }
 
-    // 5. DRAW TEXT
-    ctx.textAlign = align;
-    const fontBase = 30 * textScale;
-
-    // Bank Name Label (Optional)
-    if(state.styleIndex !== 4 && state.styleIndex !== 8) {
-        ctx.fillStyle = txtColor;
-        ctx.font = `bold ${fontBase * 1.5}px Arial`;
-        // Position next to logo or below depending on layout
-        if(align === 'left') ctx.fillText(state.bank.name, logoX + logoBaseSize + 20, logoY + (logoBaseSize/2) + 10);
+    // 2. DRAW CONTENT BASED ON STYLE
+    if (state.custom.active) {
+        drawCustomContent(name, acct);
+    } else {
+        if (state.style === 'bbl_classic') drawBBLClassic(w, h, name, acct);
+        else if (state.style === 'modern_clean') drawModern(w, h, name, acct);
+        else if (state.style === 'social_post') drawSocial(w, h, name, acct);
+        else drawMinimal(w, h, name, acct); // Default
     }
 
-    // Account Name
-    ctx.fillStyle = labelColor;
-    ctx.font = `${fontBase * 0.8}px Padauk`;
-    ctx.fillText("အကောင့်အမည် (Account Name)", baseX, baseY);
+    // Output to Image
+    document.getElementById('resultImage').src = canvas.toDataURL("image/png");
+}
 
-    ctx.fillStyle = txtColor;
-    ctx.font = `bold ${fontBase * 1.2}px Padauk`;
-    ctx.fillText(name, baseX, baseY + (fontBase * 1.5));
+// --- STYLE DRAWING FUNCTIONS ---
 
-    // Account Number
-    ctx.fillStyle = labelColor;
-    ctx.font = `${fontBase * 0.8}px Padauk`;
-    ctx.fillText("အကောင့်နံပါတ် (Account No)", baseX, baseY + (fontBase * 3.5));
-
-    ctx.fillStyle = primaryColor;
-    if(state.styleIndex === 1) ctx.fillStyle = "#fff"; // White num on dark
-    if(state.styleIndex === 2) ctx.fillStyle = "#000"; // Black num on gradient
+function drawBBLClassic(w, h, name, acct) {
+    // White BG
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,w,h);
     
-    ctx.font = `bold ${fontBase * 1.6}px Arial`;
-    ctx.fillText(acct, baseX, baseY + (fontBase * 5));
+    const blue = "#1e4598"; // Official BBL Blue
+    const orange = "#f58220"; 
 
-    // 6. Output to Image
-    imgResult.src = canvas.toDataURL("image/png");
+    // Header Left: "BBL"
+    ctx.fillStyle = blue;
+    ctx.font = "bold 130px Roboto";
+    ctx.textAlign = "left";
+    ctx.fillText(state.bank.name, 50, 160);
+
+    // Vertical Divider
+    ctx.fillStyle = "#cccccc";
+    ctx.fillRect(320, 60, 5, 120);
+
+    // Header Text: Thai & English
+    ctx.fillStyle = blue;
+    ctx.font = "bold 60px Kanit"; 
+    ctx.fillText(state.bank.thName || "ธนาคาร", 350, 100);
+    
+    ctx.fillStyle = "#666";
+    ctx.font = "bold 30px Roboto";
+    ctx.fillText(state.bank.name + " BANK", 350, 150);
+    
+    // Underline accent
+    ctx.fillStyle = orange;
+    ctx.fillRect(350, 115, 330, 5);
+
+    // Logo (Top Right)
+    drawLogo(w-220, 50, 170);
+
+    // --- ROW 1: Number ---
+    // Blue Label Box "BANK NUMBER"
+    ctx.fillStyle = blue;
+    ctx.fillRect(50, 250, 320, 80);
+    
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 35px Roboto";
+    ctx.textAlign = "center";
+    ctx.fillText("BANK NUMBER", 210, 303);
+
+    // Account Number Text
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#444";
+    ctx.font = "bold 80px Roboto";
+    ctx.fillText(acct, 400, 320);
+
+    // --- ROW 2: Name ---
+    // Full width blue box
+    ctx.fillStyle = blue;
+    ctx.fillRect(50, 400, w-100, 120);
+
+    // Name Text inside box
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 60px Roboto";
+    ctx.textAlign = "left";
+    ctx.fillText(name, 90, 485);
 }
 
-// Helper for rounded images (optional)
-function roundedImage(ctx, x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    ctx.clip();
+function drawModern(w, h, name, acct) {
+    // Gradient BG
+    let grd = ctx.createLinearGradient(0, 0, w, h);
+    grd.addColorStop(0, state.bank.color);
+    grd.addColorStop(1, "#ffffff");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,w,h);
+
+    // White Card
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.roundRect(100, 100, w-200, h-200, 30);
+    ctx.fill();
+
+    drawLogo(w/2 - 50, 50, 100);
+
+    ctx.fillStyle = state.bank.color;
+    ctx.textAlign = "center";
+    ctx.font = "bold 40px Kanit";
+    ctx.fillText(state.bank.thName, w/2, 250);
+
+    ctx.fillStyle = "#333";
+    ctx.font = "bold 60px Roboto";
+    ctx.fillText(acct, w/2, 350);
+
+    ctx.fillStyle = "#666";
+    ctx.font = "40px Padauk";
+    ctx.fillText(name, w/2, 420);
 }
 
-// Polyfill for roundRect if needed
-if (!ctx.roundRect) {
-    ctx.roundRect = function(x, y, w, h, r) {
-        if (w < 2 * r) r = w / 2;
-        if (h < 2 * r) r = h / 2;
-        this.beginPath();
-        this.moveTo(x+r, y);
-        this.arcTo(x+w, y, x+w, y+h, r);
-        this.arcTo(x+w, y+h, x, y+h, r);
-        this.arcTo(x, y+h, x, y, r);
-        this.arcTo(x, y, x+w, y, r);
-        this.closePath();
-        return this;
+function drawSocial(w, h, name, acct) {
+    // Split BG
+    ctx.fillStyle = state.bank.color;
+    ctx.fillRect(0,0,w,250);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,250,w,h-250);
+
+    // Card in Center
+    ctx.fillStyle = "#fff";
+    ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = 20;
+    ctx.roundRect(150, 100, w-300, 400, 20);
+    ctx.fill(); ctx.shadowBlur = 0;
+
+    drawLogo(w/2 - 60, 50, 120);
+
+    ctx.fillStyle = "#333";
+    ctx.textAlign = "center";
+    ctx.font = "bold 50px Roboto";
+    ctx.fillText(acct, w/2, 280);
+    
+    ctx.fillStyle = state.bank.color;
+    ctx.font = "bold 40px Padauk";
+    ctx.fillText(name, w/2, 350);
+}
+
+function drawMinimal(w, h, name, acct) {
+    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = state.bank.color; ctx.lineWidth=30;
+    ctx.strokeRect(0,0,w,h);
+
+    drawLogo(80, 80, 100);
+    
+    ctx.fillStyle = state.bank.color;
+    ctx.textAlign = "left";
+    ctx.font = "bold 80px Roboto";
+    ctx.fillText(acct, 80, 350);
+    
+    ctx.fillStyle = "#000";
+    ctx.font = "50px Padauk";
+    ctx.fillText(name, 80, 450);
+}
+
+// --- CUSTOM CONTENT DRAWER ---
+function drawCustomContent(name, acct) {
+    // If no BG uploaded, use white
+    if(!state.uploadedBg) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+    
+    // Draw Logo if uploaded
+    if(state.uploadedLogo) {
+        ctx.drawImage(state.uploadedLogo, 50, 50, 150, 150);
+    }
+
+    ctx.fillStyle = state.custom.color;
+    
+    // Draw Name
+    ctx.font = `bold ${60 * state.custom.scale}px Padauk`;
+    ctx.textAlign = "left";
+    ctx.fillText(name, state.custom.nameX, state.custom.nameY);
+
+    // Draw Acct
+    ctx.font = `bold ${80 * state.custom.scale}px Roboto`;
+    ctx.fillText(acct, state.custom.acctX, state.custom.acctY);
+}
+
+// --- HELPER: Draw Logo or Fallback ---
+function drawLogo(x, y, size) {
+    if(state.uploadedLogo) {
+        ctx.drawImage(state.uploadedLogo, x, y, size, size);
+    } else {
+        // Fallback Circle
+        ctx.fillStyle = state.bank.color;
+        ctx.beginPath(); ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = `bold ${size/3}px Arial`;
+        ctx.textAlign = "center";
+        ctx.fillText(state.bank.name, x + size/2, y + size/2 + size/10);
     }
 }
 
-// Start
+// Helpers
+function resetAll() {
+    location.reload(); // Simple reset
+}
+if (!ctx.roundRect) {
+    ctx.roundRect = function(x, y, w, h, r) { ctx.rect(x,y,w,h); return this; }
+}
+
 window.onload = init;
