@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Card Maker</title>
+    <title>Thai Bank Card Maker</title>
     <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,45 +11,46 @@
 
     <div class="container">
         <header>
-            <h1>Bank Card Maker</h1>
-            <p>ဘဏ်ကဒ် ဒီဇိုင်း ပြုလုပ်ရန်</p>
+            <h1>Thai Bank Card Maker</h1>
+            <p>ငွေလွှဲ Account ကဒ် ဒီဇိုင်းပြုလုပ်ရန်</p>
         </header>
 
-        <div class="card-preview">
-            <canvas id="cardCanvas" width="600" height="350" style="display:none;"></canvas>
+        <div class="card-preview-container">
+            <canvas id="cardCanvas" style="display:none;"></canvas>
             
-            <img id="resultImage" src="" alt="Card Preview" style="display:none;">
-            <div id="placeholderText">ဒီဇိုင်းကို အောက်တွင် ရွေးချယ်ပါ</div>
+            <img id="resultImage" src="" alt="Preview will appear here" style="display:none;">
+            <div id="placeholderText">
+                <p>အောက်တွင် အချက်အလက်များ ဖြည့်ပါ</p>
+            </div>
         </div>
 
         <div class="form-control">
             
-            <label>ဘဏ် ရွေးချယ်ရန်</label>
-            <div class="bank-selector">
-                <div class="bank-option active" onclick="selectBank('bbl', '#1e4598')">BBL</div>
-                <div class="bank-option" onclick="selectBank('kbank', '#138f2d')">KBank</div>
-                <div class="bank-option" onclick="selectBank('scb', '#4e2a84')">SCB</div>
-                <div class="bank-option" onclick="selectBank('kbz', '#0054a6')">KBZ</div>
-            </div>
+            <label>ဘဏ် ရွေးချယ်ရန် (Bank)</label>
+            <div class="bank-grid" id="bankGrid">
+                </div>
 
-            <label>နောက်ခံ ဒီဇိုင်း (Color Theme)</label>
-            <select id="themeSelect" onchange="updateCard()">
-                <option value="solid">သာမန် (Solid Color)</option>
-                <option value="gradient">အရောင်ပြေး (Gradient)</option>
-                <option value="modern">ခေတ်ဆန်သော (Modern)</option>
+            <label>ဒီဇိုင်း ပုံစံ (Design Layout)</label>
+            <select id="themeSelect" onchange="triggerUpdate()">
+                <option value="modern_card">Standard Card (သာမန်ကဒ်)</option>
+                <option value="social_post">Social Media Post (Instagram/FB)</option>
+                <option value="business_cover">Business Cover (Official)</option>
+                <option value="minimalist">Minimalist (ရိုးရှင်းသန့်ပြန့်)</option>
             </select>
 
             <label>အမည် (Name)</label>
-            <input type="text" id="nameInput" placeholder="MR. TINT AUNG KHAING" oninput="updateCard()">
+            <input type="text" id="nameInput" placeholder="MR. TINT AUNG KHAING" oninput="triggerUpdate()">
 
             <label>ဘဏ်နံပါတ် (Account No)</label>
-            <input type="text" id="acctInput" placeholder="000-000-0000" oninput="updateCard()" maxlength="15">
+            <input type="text" id="acctInput" placeholder="000-000-0000" oninput="triggerUpdate()" maxlength="15">
 
-            <button class="btn-generate" onclick="generateImage()">ပုံထုတ်မည် (Generate)</button>
+            <div class="button-group">
+                <button class="btn-reset" onclick="resetForm()">ပြန်စမယ် (Reset)</button>
+                <button class="btn-generate" onclick="generateImage()">ပုံထုတ်မည် (Generate)</button>
+            </div>
             
-            <div id="downloadSection" style="display:none; margin-top: 10px;">
-                <p class="fb-notice">ပုံပေါ်လာပါက ပုံကို ဖိနှိပ်ပြီး Save လုပ်ပါ (Facebook Browser အတွက်)</p>
-                <a id="downloadLink" class="btn-download">Download Image</a>
+            <div id="downloadSection" style="display:none;">
+                <p class="fb-notice">ပုံကို ဖိနှိပ်ပြီး Save လုပ်ပါ (Long Press to Save)</p>
             </div>
         </div>
     </div>
