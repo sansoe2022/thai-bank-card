@@ -11,6 +11,15 @@ const banks = [
     { id: 'cimbt', name: 'CIMB Thai', short: 'CIMBT', thName: 'ซีไอเอ็มบี', color: '#7e1a2d', logo: 'img/cimbt.png' }
 ];
 
+// --- STYLE CONFIGURATION (NEW) ---
+const styleOptions = [
+    { id: 'layout_bbl', label: 'BBL Original Style' },
+    { id: 'layout_gradient', label: 'Gradient Style' },
+    { id: 'layout_material', label: 'Material Style' },
+    { id: 'layout_modern', label: 'Modern Style' }
+];
+let currentStyleIndex = 0;
+
 let currentBank = banks[0];
 let uploadedUserImg = null;
 let bankLogoImg = new Image();
@@ -24,7 +33,7 @@ const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
-// --- INIT (Updated for Auto-Fill & Download) ---
+// --- INIT ---
 window.onload = function() {
     initBankGrid();
     
@@ -42,7 +51,10 @@ window.onload = function() {
             currentBank = targetBank;
         }
     }
-    loadBankLogo(currentBank); // Load logo
+    
+    // Set Initial Style Label
+    updateStyleLabel();
+    loadBankLogo(currentBank); // Load logo & Render
     
     if (pName) document.getElementById('nameInput').value = decodeURIComponent(pName);
     if (pAcct) document.getElementById('acctInput').value = decodeURIComponent(pAcct);
@@ -62,42 +74,57 @@ window.onload = function() {
     }
 };
 
+// --- STYLE SLIDER LOGIC (NEW) ---
+function changeStyle(direction) {
+    currentStyleIndex += direction;
+    
+    // Loop logic
+    if (currentStyleIndex >= styleOptions.length) {
+        currentStyleIndex = 0;
+    } else if (currentStyleIndex < 0) {
+        currentStyleIndex = styleOptions.length - 1;
+    }
+    
+    updateStyleLabel();
+    render();
+}
+
+function updateStyleLabel() {
+    const labelEl = document.getElementById('currentStyleLabel');
+    if(labelEl) {
+        labelEl.innerText = styleOptions[currentStyleIndex].label;
+    }
+}
+
 // --- DETECT FACEBOOK BROWSER ---
 function isFacebookBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
 }
 
-// --- IMPROVED DOWNLOAD FUNCTION ---
+// --- DOWNLOAD FUNCTION ---
 function downloadImage() {
-    // Check if in Facebook browser
     if (isFacebookBrowser()) {
         showFacebookBrowserDialog();
     } else {
-        // Normal browser - direct download
-        render(); // Ensure latest state is drawn
+        render(); // Ensure latest state
         const fileName = `BankCard-${currentBank.short}-${Date.now()}.png`;
         canvas.toBlob(function(blob) {
             if (!blob) return;
-            
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = fileName;
             link.href = url;
-            
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
             setTimeout(() => URL.revokeObjectURL(url), 100);
-            
         }, 'image/png');
     }
 }
 
-// --- SHOW FACEBOOK BROWSER DIALOG (Updated UI) ---
+// --- FACEBOOK DIALOG ---
 function showFacebookBrowserDialog() {
-    // Create modal backdrop
     const modalBackdrop = document.createElement('div');
     modalBackdrop.style.cssText = `
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -106,7 +133,6 @@ function showFacebookBrowserDialog() {
         z-index: 10000; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     `;
     
-    // Create dialog box
     const dialog = document.createElement('div');
     dialog.style.cssText = `
         background: white; border-radius: 12px; padding: 24px;
@@ -121,93 +147,44 @@ function showFacebookBrowserDialog() {
                 <path d="M32 16c0-8.837-7.163-16-16-16S0 7.163 0 16c0 7.98 5.85 14.604 13.5 15.803v-11.177h-4.063V16h4.063v-3.527c0-4.009 2.385-6.223 6.043-6.223 1.75 0 3.579.313 3.579.313v3.933h-2.016c-1.986 0-2.604 1.233-2.604 2.5v3h4.43l-.708 4.626h-3.722v11.177C26.15 30.604 32 23.98 32 16z" fill="#1877F2"/>
             </svg>
         </div>
-        
         <h3 style="color: #1877F2; margin: 0 0 8px 0; font-size: 19px; font-weight: 700;">Facebook Browser Detected</h3>
-        
-        <p style="color: #000; font-weight: 600; font-size: 15px; margin: 0 0 8px 0; line-height: 1.4;">
-            Facebook တွင် တိုက်ရိုက် Download များ<br>ပိတ်ထားသည်
-        </p>
-        
-        <p style="color: #65676b; font-size: 14px; margin: 0 0 24px 0; line-height: 1.4;">
-            ဤ ဝက်ဆိုက်မှ ပြုလုပ်ထားသော ပုံအား Download ဖွင့်<br>ရန် ကြိုးစားပေးပါ။ ဆက်လုပ်လိုပါသလား?
-        </p>
-        
+        <p style="color: #000; font-weight: 600; font-size: 15px; margin: 0 0 8px 0; line-height: 1.4;">Facebook တွင် တိုက်ရိုက် Download များ<br>ပိတ်ထားသည်</p>
+        <p style="color: #65676b; font-size: 14px; margin: 0 0 24px 0; line-height: 1.4;">ဤ ဝက်ဆိုက်မှ ပြုလုပ်ထားသော ပုံအား Download ဖွင့်<br>ရန် ကြိုးစားပေးပါ။ ဆက်လုပ်လိုပါသလား?</p>
         <div style="display: flex; gap: 12px; width: 100%;">
-            <button id="fbDialogBack" style="
-                flex: 1; padding: 12px 0;
-                background: #fff; border: 1px solid #e4e6eb; border-radius: 6px;
-                color: #4b4f56; font-weight: 600; font-size: 15px; cursor: pointer;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            ">GO BACK</button>
-            
-            <button id="fbDialogContinue" style="
-                flex: 1; padding: 12px 0;
-                background: #fff; border: 1px solid #e4e6eb; border-radius: 6px;
-                color: #1877F2; font-weight: 600; font-size: 15px; cursor: pointer;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            ">CONTINUE</button>
+            <button id="fbDialogBack" style="flex: 1; padding: 12px 0; background: #fff; border: 1px solid #e4e6eb; border-radius: 6px; color: #4b4f56; font-weight: 600; font-size: 15px; cursor: pointer;">GO BACK</button>
+            <button id="fbDialogContinue" style="flex: 1; padding: 12px 0; background: #fff; border: 1px solid #e4e6eb; border-radius: 6px; color: #1877F2; font-weight: 600; font-size: 15px; cursor: pointer;">CONTINUE</button>
         </div>
     `;
     
     modalBackdrop.appendChild(dialog);
     document.body.appendChild(modalBackdrop);
     
-    // Button Logic
     const backBtn = dialog.querySelector('#fbDialogBack');
     const continueBtn = dialog.querySelector('#fbDialogContinue');
     
-    // Hover Styles
-    backBtn.onmouseover = () => backBtn.style.background = '#f2f2f2';
-    backBtn.onmouseout = () => backBtn.style.background = '#fff';
-    continueBtn.onmouseover = () => continueBtn.style.background = '#f0f7ff';
-    continueBtn.onmouseout = () => continueBtn.style.background = '#fff';
-    
-    // Actions
     backBtn.onclick = () => document.body.removeChild(modalBackdrop);
-    
     continueBtn.onclick = () => {
         document.body.removeChild(modalBackdrop);
         openInExternalBrowser();
     };
-    
-    modalBackdrop.onclick = (e) => {
-        if (e.target === modalBackdrop) document.body.removeChild(modalBackdrop);
-    };
+    modalBackdrop.onclick = (e) => { if (e.target === modalBackdrop) document.body.removeChild(modalBackdrop); };
 }
 
-// --- OPEN IN EXTERNAL BROWSER (Updated to carry data) ---
+// --- OPEN IN EXTERNAL BROWSER ---
 function openInExternalBrowser() {
     const currentURL = window.location.href.split('?')[0];
-    
-    // Grab current data
     const name = document.getElementById('nameInput').value;
     const acct = document.getElementById('acctInput').value;
     const bankId = currentBank.id;
-    
-    // Build URL with params
     const fullURL = `${currentURL}?dl=1&b=${bankId}&n=${encodeURIComponent(name)}&a=${encodeURIComponent(acct)}`;
     
-    // Methods
     const methods = [
-        // 1. Android Intent (Chrome)
-        () => {
-            window.location.href = `intent://${fullURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
-        },
-        // 2. Default Open
-        () => {
-            window.open(fullURL, '_blank', 'noopener,noreferrer');
-        },
-        // 3. Fallback
-        () => {
-            window.location.href = fullURL;
-        }
+        () => { window.location.href = `intent://${fullURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`; },
+        () => { window.open(fullURL, '_blank', 'noopener,noreferrer'); },
+        () => { window.location.href = fullURL; }
     ];
     
-    // Execute
-    setTimeout(() => {
-        try { methods[0](); } catch(e) {}
-        setTimeout(() => methods[1](), 500);
-    }, 100);
+    setTimeout(() => { try { methods[0](); } catch(e) {} setTimeout(() => methods[1](), 500); }, 100);
 }
 
 // --- CROP LOGIC ---
@@ -218,9 +195,7 @@ function handleLogoUpload(input) {
             imageToCrop.src = e.target.result;
             cropModal.style.display = 'flex';
             if(cropper) { cropper.destroy(); }
-            cropper = new Cropper(imageToCrop, {
-                aspectRatio: 1, viewMode: 1, autoCropArea: 0.8,
-            });
+            cropper = new Cropper(imageToCrop, { aspectRatio: 1, viewMode: 1, autoCropArea: 0.8 });
             input.value = '';
         }
         reader.readAsDataURL(input.files[0]);
@@ -231,11 +206,7 @@ function confirmCrop() {
     if(cropper) {
         const croppedCanvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
         const img = new Image();
-        img.onload = () => {
-            uploadedUserImg = img;
-            render();
-            closeCropModal();
-        };
+        img.onload = () => { uploadedUserImg = img; render(); closeCropModal(); };
         img.src = croppedCanvas.toDataURL();
     }
 }
@@ -253,10 +224,7 @@ function initBankGrid() {
         const div = document.createElement('div');
         div.className = 'bank-item';
         if(bank.id === currentBank.id) div.classList.add('active');
-        div.innerHTML = `
-            <img src="${bank.logo}" alt="${bank.short}" onerror="this.src='https://via.placeholder.com/40?text=${bank.short}'">
-            <span>${bank.short}</span>
-        `;
+        div.innerHTML = `<img src="${bank.logo}" alt="${bank.short}" onerror="this.src='https://via.placeholder.com/40?text=${bank.short}'"><span>${bank.short}</span>`;
         div.onclick = () => selectBank(bank, div);
         grid.appendChild(div);
     });
@@ -280,13 +248,18 @@ function resetForm() {
     document.getElementById('acctInput').value = "";
     document.getElementById('logoUpload').value = "";
     uploadedUserImg = null;
+    currentStyleIndex = 0; // Reset slider
+    updateStyleLabel();
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
+// --- RENDER (UPDATED FOR SLIDER) ---
 function render() {
     const name = (document.getElementById('nameInput').value || "NAME HERE").toUpperCase();
     const acct = document.getElementById('acctInput').value || "000-000-0000";
-    const style = document.getElementById('styleSelect').value;
+    
+    // Use Style Index instead of Select Box
+    const style = styleOptions[currentStyleIndex].id;
     
     canvas.width = 1000; canvas.height = 600;
     const w = canvas.width; const h = canvas.height;
@@ -297,6 +270,7 @@ function render() {
     else if (style === 'layout_gradient') { drawGradient(w, h, name, acct); }
     else if (style === 'layout_material') { drawMaterial(w, h, name, acct); }
     else { drawModern(w, h, name, acct); }
+    
     imgOutput.src = canvas.toDataURL("image/png");
 }
 
