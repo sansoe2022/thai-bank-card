@@ -68,76 +68,84 @@ body {
     padding: 16px; margin-bottom: 24px;
 }
 
-/* --- NEW SLIDER STYLES START --- */
+/* --- SWIPE SLIDER & DOTS STYLES --- */
 .preview-container {
     display: flex;
+    flex-direction: column; /* Stack image and dots */
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     position: relative;
+    width: 100%;
 }
 
 .image-wrapper {
     position: relative;
     width: 100%;
+    /* Aspect ratio for standard card shape (1000/600) */
+    aspect-ratio: 5/3; 
     border-radius: 12px;
     overflow: hidden;
     background: #ffffff;
     box-shadow: var(--md-elevation-1);
-    min-height: 200px;
+    cursor: grab; /* Indicates draggable */
+    user-select: none;
+}
+
+.image-wrapper:active {
+    cursor: grabbing;
 }
 
 #resultImage {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    pointer-events: auto;
-    touch-action: auto;
-}
-
-/* Slider Buttons (Arrows) */
-.slider-btn {
-    width: 40px;
-    height: 40px;
-    min-width: 40px; /* Prevent shrinking */
-    border-radius: 50%;
-    background: var(--md-sys-color-surface);
-    color: var(--md-sys-color-on-surface);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: var(--md-elevation-1);
-    user-select: none;
-    transition: transform 0.2s, background-color 0.2s;
-}
-
-.slider-btn:active {
-    transform: scale(0.9);
-    background-color: var(--md-sys-color-primary-container);
-}
-
-.slider-btn span {
-    font-size: 20px;
+    pointer-events: none; /* Allows swipes on wrapper */
 }
 
 /* Style Name Badge */
 .style-badge {
     position: absolute;
-    bottom: 12px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.65);
-    color: white; /* Always white for contrast on image */
-    padding: 6px 16px;
+    background: rgba(30, 30, 30, 0.75);
+    color: white;
+    padding: 6px 18px;
     border-radius: 100px;
     font-size: 12px;
     font-weight: 500;
     backdrop-filter: blur(4px);
     pointer-events: none;
     white-space: nowrap;
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-/* --- NEW SLIDER STYLES END --- */
+
+/* Pagination Dots */
+.pagination-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 4px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--md-sys-color-outline-variant);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dot.active {
+    background-color: var(--md-sys-color-primary);
+    transform: scale(1.25);
+}
+/* --- END SLIDER STYLES --- */
 
 
 /* Download Button */
@@ -200,9 +208,6 @@ body {
     top: 4px; font-size: 12px; color: var(--md-sys-color-primary);
 }
 .md-input-group:focus-within { border-bottom: 2px solid var(--md-sys-color-primary); }
-
-/* Select (Removed since we use Slider now, but keeping class for safety) */
-.md-select-wrapper { display: none; }
 
 .upload-container {
     border: 2px dashed var(--md-sys-color-outline-variant); border-radius: 12px;
