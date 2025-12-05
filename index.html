@@ -22,11 +22,23 @@
         <div class="content-body">
             
             <div class="preview-card-container">
-                <div class="preview-box">
-                    <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
-                    <img id="resultImage" src="" alt="Card Preview">
-                </div>
                 
+                <div class="preview-container">
+                    <div class="slider-btn prev" onclick="changeStyle(-1)">
+                        <span class="material-symbols-outlined">arrow_back_ios</span>
+                    </div>
+                    
+                    <div class="image-wrapper">
+                        <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
+                        <img id="resultImage" src="" alt="Card Preview">
+                        
+                        <div id="currentStyleLabel" class="style-badge">Default Style</div>
+                    </div>
+                
+                    <div class="slider-btn next" onclick="changeStyle(1)">
+                        <span class="material-symbols-outlined">arrow_forward_ios</span>
+                    </div>
+                </div>
                 <div class="action-buttons">
                     <button class="btn-download" onclick="downloadImage()">
                         <span class="material-symbols-outlined">download</span>
@@ -56,17 +68,7 @@
                 </div>
 
                 <div class="input-section">
-                    <label class="section-label">၃။ ဒီဇိုင်းနှင့် ဓာတ်ပုံ</label>
-                    <div class="md-select-wrapper">
-                        <select id="styleSelect" onchange="render()">
-                            <option value="layout_bbl">BBL Original Style</option>
-                            <option value="layout_gradient">Gradient Style</option>
-                            <option value="layout_material">Material Style</option>
-                            <option value="layout_modern">Modern Style</option>
-                        </select>
-                        <span class="material-symbols-outlined arrow">expand_more</span>
-                    </div>
-
+                    <label class="section-label">၃။ ဓာတ်ပုံ ထည့်သွင်းရန်</label>
                     <div class="upload-container" onclick="document.getElementById('logoUpload').click()">
                         <div class="upload-icon">
                             <span class="material-symbols-outlined">crop_free</span>
