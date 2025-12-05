@@ -24,14 +24,41 @@ const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
-// --- INIT ---
+// --- INIT (Updated for Auto-Fill & Download) ---
 window.onload = function() {
     initBankGrid();
-    loadBankLogo(currentBank);
     
+    // Check URL Params for Data Transfer
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldDownload = urlParams.get('dl');
+    const pBank = urlParams.get('b');
+    const pName = urlParams.get('n');
+    const pAcct = urlParams.get('a');
+
+    // Fill Data if present
+    if (pBank) {
+        const targetBank = banks.find(b => b.id === pBank);
+        if (targetBank) {
+            currentBank = targetBank;
+        }
+    }
+    loadBankLogo(currentBank); // Load logo
+    
+    if (pName) document.getElementById('nameInput').value = decodeURIComponent(pName);
+    if (pAcct) document.getElementById('acctInput').value = decodeURIComponent(pAcct);
+    
+    // Theme Check
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         document.body.classList.add('dark-mode');
         updateThemeIcon();
+    }
+
+    // Auto Download Trigger (Wait for render)
+    if (shouldDownload === '1' && !isFacebookBrowser()) {
+        setTimeout(() => {
+            render(); 
+            setTimeout(downloadImage, 800); 
+        }, 500);
     }
 };
 
@@ -48,6 +75,7 @@ function downloadImage() {
         showFacebookBrowserDialog();
     } else {
         // Normal browser - direct download
+        render(); // Ensure latest state is drawn
         const fileName = `BankCard-${currentBank.short}-${Date.now()}.png`;
         canvas.toBlob(function(blob) {
             if (!blob) return;
@@ -67,77 +95,56 @@ function downloadImage() {
     }
 }
 
-// --- SHOW FACEBOOK BROWSER DIALOG ---
+// --- SHOW FACEBOOK BROWSER DIALOG (Updated UI) ---
 function showFacebookBrowserDialog() {
     // Create modal backdrop
     const modalBackdrop = document.createElement('div');
     modalBackdrop.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        padding: 20px;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     `;
     
     // Create dialog box
     const dialog = document.createElement('div');
     dialog.style.cssText = `
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 400px;
-        width: 100%;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        text-align: center;
+        background: white; border-radius: 12px; padding: 24px;
+        max-width: 340px; width: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        text-align: center; display: flex; flex-direction: column; align-items: center;
     `;
     
     dialog.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="#1877F2">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        <div style="margin-bottom: 12px;">
+            <svg width="48" height="48" viewBox="0 0 32 32">
+                <path d="M32 16c0-8.837-7.163-16-16-16S0 7.163 0 16c0 7.98 5.85 14.604 13.5 15.803v-11.177h-4.063V16h4.063v-3.527c0-4.009 2.385-6.223 6.043-6.223 1.75 0 3.579.313 3.579.313v3.933h-2.016c-1.986 0-2.604 1.233-2.604 2.5v3h4.43l-.708 4.626h-3.722v11.177C26.15 30.604 32 23.98 32 16z" fill="#1877F2"/>
             </svg>
-            <h3 style="margin: 0 0 0 12px; font-size: 20px; font-weight: 600; color: #1877F2;">Facebook Browser Detected</h3>
         </div>
         
-        <p style="color: #333; font-size: 16px; line-height: 1.5; margin: 16px 0;">
-            <strong>Facebook</strong> တွင် တိုက်ရိုက် <strong>Download</strong> မရနိုင်ပါ
+        <h3 style="color: #1877F2; margin: 0 0 8px 0; font-size: 19px; font-weight: 700;">Facebook Browser Detected</h3>
+        
+        <p style="color: #000; font-weight: 600; font-size: 15px; margin: 0 0 8px 0; line-height: 1.4;">
+            Facebook တွင် တိုက်ရိုက် Download များ<br>ပိတ်ထားသည်
         </p>
         
-        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 16px 0;">
-            ဤ ဘော်ဇတွင်မှ ပြင်ပဘော်ဇာသို့ Download မှင် ကြိုးစားပေးပါ။ သက်လွန်ပြီးပါသလား?
+        <p style="color: #65676b; font-size: 14px; margin: 0 0 24px 0; line-height: 1.4;">
+            ဤ ဝက်ဆိုက်မှ ပြုလုပ်ထားသော ပုံအား Download ဖွင့်<br>ရန် ကြိုးစားပေးပါ။ ဆက်လုပ်လိုပါသလား?
         </p>
         
-        <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <div style="display: flex; gap: 12px; width: 100%;">
             <button id="fbDialogBack" style="
-                flex: 1;
-                padding: 12px 24px;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                background: white;
-                color: #666;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
+                flex: 1; padding: 12px 0;
+                background: #fff; border: 1px solid #e4e6eb; border-radius: 6px;
+                color: #4b4f56; font-weight: 600; font-size: 15px; cursor: pointer;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             ">GO BACK</button>
             
             <button id="fbDialogContinue" style="
-                flex: 1;
-                padding: 12px 24px;
-                border: none;
-                border-radius: 8px;
-                background: #1877F2;
-                color: white;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
+                flex: 1; padding: 12px 0;
+                background: #fff; border: 1px solid #e4e6eb; border-radius: 6px;
+                color: #1877F2; font-weight: 600; font-size: 15px; cursor: pointer;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             ">CONTINUE</button>
         </div>
     `;
@@ -145,73 +152,63 @@ function showFacebookBrowserDialog() {
     modalBackdrop.appendChild(dialog);
     document.body.appendChild(modalBackdrop);
     
-    // Button hover effects
+    // Button Logic
     const backBtn = dialog.querySelector('#fbDialogBack');
     const continueBtn = dialog.querySelector('#fbDialogContinue');
     
-    backBtn.onmouseover = () => backBtn.style.background = '#f5f5f5';
-    backBtn.onmouseout = () => backBtn.style.background = 'white';
+    // Hover Styles
+    backBtn.onmouseover = () => backBtn.style.background = '#f2f2f2';
+    backBtn.onmouseout = () => backBtn.style.background = '#fff';
+    continueBtn.onmouseover = () => continueBtn.style.background = '#f0f7ff';
+    continueBtn.onmouseout = () => continueBtn.style.background = '#fff';
     
-    continueBtn.onmouseover = () => continueBtn.style.background = '#166FE5';
-    continueBtn.onmouseout = () => continueBtn.style.background = '#1877F2';
-    
-    // Button actions
-    backBtn.onclick = () => {
-        document.body.removeChild(modalBackdrop);
-    };
+    // Actions
+    backBtn.onclick = () => document.body.removeChild(modalBackdrop);
     
     continueBtn.onclick = () => {
         document.body.removeChild(modalBackdrop);
         openInExternalBrowser();
     };
     
-    // Close on backdrop click
     modalBackdrop.onclick = (e) => {
-        if (e.target === modalBackdrop) {
-            document.body.removeChild(modalBackdrop);
-        }
+        if (e.target === modalBackdrop) document.body.removeChild(modalBackdrop);
     };
 }
 
-// --- OPEN IN EXTERNAL BROWSER ---
+// --- OPEN IN EXTERNAL BROWSER (Updated to carry data) ---
 function openInExternalBrowser() {
-    const currentURL = window.location.href;
+    const currentURL = window.location.href.split('?')[0];
     
-    // Try multiple methods to open external browser
+    // Grab current data
+    const name = document.getElementById('nameInput').value;
+    const acct = document.getElementById('acctInput').value;
+    const bankId = currentBank.id;
+    
+    // Build URL with params
+    const fullURL = `${currentURL}?dl=1&b=${bankId}&n=${encodeURIComponent(name)}&a=${encodeURIComponent(acct)}`;
+    
+    // Methods
     const methods = [
-        // Method 1: Intent URL for Android
+        // 1. Android Intent (Chrome)
         () => {
-            window.location.href = `intent://${currentURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+            window.location.href = `intent://${fullURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
         },
-        // Method 2: Direct window.open
+        // 2. Default Open
         () => {
-            window.open(currentURL, '_blank', 'noopener,noreferrer');
+            window.open(fullURL, '_blank', 'noopener,noreferrer');
         },
-        // Method 3: Create temp link
+        // 3. Fallback
         () => {
-            const link = document.createElement('a');
-            link.href = currentURL;
-            link.target = '_system';
-            link.rel = 'external';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.location.href = fullURL;
         }
     ];
     
-    // Try each method
-    methods.forEach((method, index) => {
-        setTimeout(() => {
-            try {
-                method();
-            } catch (e) {
-                console.log(`Method ${index + 1} failed:`, e);
-            }
-        }, index * 100);
-    });
+    // Execute
+    setTimeout(() => {
+        try { methods[0](); } catch(e) {}
+        setTimeout(() => methods[1](), 500);
+    }, 100);
 }
-
-
 
 // --- CROP LOGIC ---
 function handleLogoUpload(input) {
