@@ -43,39 +43,12 @@ function isFacebookBrowser() {
 
 // --- IMPROVED DOWNLOAD FUNCTION ---
 function downloadImage() {
-    // Convert Canvas to data URL
-    const dataURL = canvas.toDataURL('image/png');
-    const fileName = `BankCard-${currentBank.short}-${Date.now()}.png`;
-    
     // Check if in Facebook browser
     if (isFacebookBrowser()) {
-        // Open in external browser (Chrome/Safari)
-        const blob = dataURLtoBlob(dataURL);
-        const blobURL = URL.createObjectURL(blob);
-        
-        // Try to open in external browser
-        const externalLink = document.createElement('a');
-        externalLink.href = blobURL;
-        externalLink.download = fileName;
-        externalLink.target = '_blank';
-        externalLink.rel = 'noopener noreferrer';
-        
-        // Add data URL as fallback
-        externalLink.setAttribute('data-href', dataURL);
-        
-        document.body.appendChild(externalLink);
-        externalLink.click();
-        document.body.removeChild(externalLink);
-        
-        // Show instruction message
-        setTimeout(() => {
-            alert('Facebook Browser ထဲမှာ download မရနိုင်ရင် \n\n1. မျက်နှာပြင်ထောင့်က "..." (menu) နှိပ်ပါ\n2. "Open in Chrome/Safari" ရွေးပါ\n3. ပြန်လည် download နှိပ်ပါ');
-        }, 500);
-        
-        setTimeout(() => URL.revokeObjectURL(blobURL), 5000);
-        
+        showFacebookBrowserDialog();
     } else {
         // Normal browser - direct download
+        const fileName = `BankCard-${currentBank.short}-${Date.now()}.png`;
         canvas.toBlob(function(blob) {
             if (!blob) return;
             
@@ -94,18 +67,151 @@ function downloadImage() {
     }
 }
 
-// --- HELPER FUNCTION TO CONVERT DATA URL TO BLOB ---
-function dataURLtoBlob(dataURL) {
-    const parts = dataURL.split(',');
-    const mime = parts[0].match(/:(.*?);/)[1];
-    const bstr = atob(parts[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while(n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], {type: mime});
+// --- SHOW FACEBOOK BROWSER DIALOG ---
+function showFacebookBrowserDialog() {
+    // Create modal backdrop
+    const modalBackdrop = document.createElement('div');
+    modalBackdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    `;
+    
+    // Create dialog box
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+    `;
+    
+    dialog.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#1877F2">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            <h3 style="margin: 0 0 0 12px; font-size: 20px; font-weight: 600; color: #1877F2;">Facebook Browser Detected</h3>
+        </div>
+        
+        <p style="color: #333; font-size: 16px; line-height: 1.5; margin: 16px 0;">
+            <strong>Facebook</strong> တွင် တိုက်ရိုက် <strong>Download</strong> မရနိုင်ပါ
+        </p>
+        
+        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 16px 0;">
+            ဤ ဘော်ဇတွင်မှ ပြင်ပဘော်ဇာသို့ Download မှင် ကြိုးစားပေးပါ။ သက်လွန်ပြီးပါသလား?
+        </p>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button id="fbDialogBack" style="
+                flex: 1;
+                padding: 12px 24px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                background: white;
+                color: #666;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            ">GO BACK</button>
+            
+            <button id="fbDialogContinue" style="
+                flex: 1;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+                background: #1877F2;
+                color: white;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            ">CONTINUE</button>
+        </div>
+    `;
+    
+    modalBackdrop.appendChild(dialog);
+    document.body.appendChild(modalBackdrop);
+    
+    // Button hover effects
+    const backBtn = dialog.querySelector('#fbDialogBack');
+    const continueBtn = dialog.querySelector('#fbDialogContinue');
+    
+    backBtn.onmouseover = () => backBtn.style.background = '#f5f5f5';
+    backBtn.onmouseout = () => backBtn.style.background = 'white';
+    
+    continueBtn.onmouseover = () => continueBtn.style.background = '#166FE5';
+    continueBtn.onmouseout = () => continueBtn.style.background = '#1877F2';
+    
+    // Button actions
+    backBtn.onclick = () => {
+        document.body.removeChild(modalBackdrop);
+    };
+    
+    continueBtn.onclick = () => {
+        document.body.removeChild(modalBackdrop);
+        openInExternalBrowser();
+    };
+    
+    // Close on backdrop click
+    modalBackdrop.onclick = (e) => {
+        if (e.target === modalBackdrop) {
+            document.body.removeChild(modalBackdrop);
+        }
+    };
 }
+
+// --- OPEN IN EXTERNAL BROWSER ---
+function openInExternalBrowser() {
+    const currentURL = window.location.href;
+    
+    // Try multiple methods to open external browser
+    const methods = [
+        // Method 1: Intent URL for Android
+        () => {
+            window.location.href = `intent://${currentURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+        },
+        // Method 2: Direct window.open
+        () => {
+            window.open(currentURL, '_blank', 'noopener,noreferrer');
+        },
+        // Method 3: Create temp link
+        () => {
+            const link = document.createElement('a');
+            link.href = currentURL;
+            link.target = '_system';
+            link.rel = 'external';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    ];
+    
+    // Try each method
+    methods.forEach((method, index) => {
+        setTimeout(() => {
+            try {
+                method();
+            } catch (e) {
+                console.log(`Method ${index + 1} failed:`, e);
+            }
+        }, index * 100);
+    });
+}
+
+
 
 // --- CROP LOGIC ---
 function handleLogoUpload(input) {
