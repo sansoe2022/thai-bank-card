@@ -104,23 +104,20 @@ body {
     pointer-events: none; /* Allows swipes on wrapper */
 }
 
-/* Style Name Badge */
+/* Style Name Badge (Updated Position) */
 .style-badge {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(30, 30, 30, 0.75);
-    color: white;
-    padding: 6px 18px;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    background: var(--md-sys-color-surface); /* Adaptive BG */
+    color: var(--md-sys-color-on-surface); /* Adaptive Text */
+    border: 1px solid var(--md-sys-color-outline-variant);
+    padding: 6px 16px;
     border-radius: 100px;
     font-size: 12px;
     font-weight: 500;
-    backdrop-filter: blur(4px);
     pointer-events: none;
     white-space: nowrap;
-    z-index: 2;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    text-align: center;
 }
 
 /* Pagination Dots */
@@ -128,7 +125,6 @@ body {
     display: flex;
     justify-content: center;
     gap: 8px;
-    margin-top: 16px;
     padding: 4px;
 }
 
@@ -161,10 +157,7 @@ body {
 }
 .btn-download:active { transform: scale(0.98); }
 
-.save-hint {
-    font-size: 11px; color: var(--md-sys-color-on-surface-variant);
-    text-align: center; margin-top: 10px; line-height: 1.4;
-}
+/* Note: Save-hint class removed as requested */
 
 /* Controls */
 .controls-panel { display: flex; flex-direction: column; gap: 24px; }
