@@ -13,7 +13,7 @@ const banks = [
 
 // --- STYLE CONFIGURATION ---
 const styleOptions = [
-    { id: 'layout_bbl', label: 'Default Style' }, // Updated Name
+    { id: 'layout_bbl', label: 'Default Style' }, 
     { id: 'layout_gradient', label: 'Gradient Style' },
     { id: 'layout_material', label: 'Material Style' },
     { id: 'layout_modern', label: 'Modern Style' }
@@ -36,8 +36,8 @@ const imgOutput = document.getElementById('resultImage');
 // --- INIT ---
 window.onload = function() {
     initBankGrid();
-    initDots(); // Initialize Dots
-    initSwipeGestures(); // Initialize Touch Swipe
+    initDots(); 
+    initSwipeGestures(); 
     
     // Check URL Params for Data Transfer
     const urlParams = new URLSearchParams(window.location.search);
@@ -147,7 +147,7 @@ function initSwipeGestures() {
     }, {passive: true});
 
     function handleSwipe() {
-        const threshold = 50; // Minimum distance to be considered a swipe
+        const threshold = 50; 
         
         if (endX < startX - threshold) {
             // Swiped Left -> Next
@@ -316,9 +316,10 @@ function resetForm() {
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
-// --- RENDER ---
+// --- RENDER (UPDATED NAME CASE SENSITIVITY) ---
 function render() {
-    const name = (document.getElementById('nameInput').value || "NAME HERE").toUpperCase();
+    // REMOVED .toUpperCase() here
+    const name = (document.getElementById('nameInput').value || "Name Here");
     const acct = document.getElementById('acctInput').value || "000-000-0000";
     
     // Use Style Index
