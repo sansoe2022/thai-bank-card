@@ -21,11 +21,20 @@
 
         <div class="content-body">
             
-            <div class="preview-card-container">
-                <div class="preview-box">
-                    <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
-                    <img id="resultImage" src="" alt="Card Preview">
-                </div>
+            <div class="preview-container">
+    <div class="slider-btn prev" onclick="changeStyle(-1)">
+        <span class="material-symbols-outlined">arrow_back_ios</span>
+    </div>
+    
+    <div class="image-wrapper">
+        <img id="resultImage" src="" alt="Card Preview">
+        <div id="currentStyleLabel" class="style-badge">BBL Original Style</div>
+    </div>
+
+    <div class="slider-btn next" onclick="changeStyle(1)">
+        <span class="material-symbols-outlined">arrow_forward_ios</span>
+    </div>
+</div>
                 
                 <div class="action-buttons">
                     <button class="btn-download" onclick="downloadImage()">
