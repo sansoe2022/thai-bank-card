@@ -11,9 +11,9 @@ const banks = [
     { id: 'cimbt', name: 'CIMB Thai', short: 'CIMBT', thName: 'ซีไอเอ็มบี', color: '#7e1a2d', logo: 'img/cimbt.png' }
 ];
 
-// --- STYLE CONFIGURATION (NEW) ---
+// --- STYLE CONFIGURATION ---
 const styleOptions = [
-    { id: 'layout_bbl', label: 'BBL Original Style' },
+    { id: 'layout_bbl', label: 'Default Style' }, // Updated Name
     { id: 'layout_gradient', label: 'Gradient Style' },
     { id: 'layout_material', label: 'Material Style' },
     { id: 'layout_modern', label: 'Modern Style' }
@@ -36,6 +36,8 @@ const imgOutput = document.getElementById('resultImage');
 // --- INIT ---
 window.onload = function() {
     initBankGrid();
+    initDots(); // Initialize Dots
+    initSwipeGestures(); // Initialize Touch Swipe
     
     // Check URL Params for Data Transfer
     const urlParams = new URLSearchParams(window.location.search);
@@ -52,7 +54,6 @@ window.onload = function() {
         }
     }
     
-    // Set Initial Style Label
     updateStyleLabel();
     loadBankLogo(currentBank); // Load logo & Render
     
@@ -74,7 +75,36 @@ window.onload = function() {
     }
 };
 
-// --- STYLE SLIDER LOGIC (NEW) ---
+// --- DOTS LOGIC ---
+function initDots() {
+    const container = document.getElementById('styleDots');
+    container.innerHTML = ''; // Clear existing
+    
+    styleOptions.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `dot ${index === 0 ? 'active' : ''}`;
+        dot.onclick = () => jumpToStyle(index);
+        container.appendChild(dot);
+    });
+}
+
+function updateDots() {
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+        if (index === currentStyleIndex) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+// --- STYLE & SWIPE LOGIC ---
+function jumpToStyle(index) {
+    currentStyleIndex = index;
+    updateUIAndRender();
+}
+
 function changeStyle(direction) {
     currentStyleIndex += direction;
     
@@ -85,7 +115,12 @@ function changeStyle(direction) {
         currentStyleIndex = styleOptions.length - 1;
     }
     
+    updateUIAndRender();
+}
+
+function updateUIAndRender() {
     updateStyleLabel();
+    updateDots();
     render();
 }
 
@@ -93,6 +128,34 @@ function updateStyleLabel() {
     const labelEl = document.getElementById('currentStyleLabel');
     if(labelEl) {
         labelEl.innerText = styleOptions[currentStyleIndex].label;
+    }
+}
+
+// --- SWIPE GESTURES (TOUCH) ---
+function initSwipeGestures() {
+    const swipeArea = document.getElementById('swipeArea');
+    let startX = 0;
+    let endX = 0;
+
+    swipeArea.addEventListener('touchstart', (e) => {
+        startX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    swipeArea.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, {passive: true});
+
+    function handleSwipe() {
+        const threshold = 50; // Minimum distance to be considered a swipe
+        
+        if (endX < startX - threshold) {
+            // Swiped Left -> Next
+            changeStyle(1);
+        } else if (endX > startX + threshold) {
+            // Swiped Right -> Previous
+            changeStyle(-1);
+        }
     }
 }
 
@@ -248,17 +311,17 @@ function resetForm() {
     document.getElementById('acctInput').value = "";
     document.getElementById('logoUpload').value = "";
     uploadedUserImg = null;
-    currentStyleIndex = 0; // Reset slider
-    updateStyleLabel();
+    currentStyleIndex = 0; 
+    updateUIAndRender();
     selectBank(banks[0], document.querySelector('.bank-item'));
 }
 
-// --- RENDER (UPDATED FOR SLIDER) ---
+// --- RENDER ---
 function render() {
     const name = (document.getElementById('nameInput').value || "NAME HERE").toUpperCase();
     const acct = document.getElementById('acctInput').value || "000-000-0000";
     
-    // Use Style Index instead of Select Box
+    // Use Style Index
     const style = styleOptions[currentStyleIndex].id;
     
     canvas.width = 1000; canvas.height = 600;
