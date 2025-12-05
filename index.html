@@ -24,20 +24,17 @@
             <div class="preview-card-container">
                 
                 <div class="preview-container">
-                    <div class="slider-btn prev" onclick="changeStyle(-1)">
-                        <span class="material-symbols-outlined">arrow_back_ios</span>
-                    </div>
                     
-                    <div class="image-wrapper">
+                    <div class="image-wrapper" id="swipeArea">
                         <canvas id="cardCanvas" width="1000" height="600" style="display:none;"></canvas>
                         <img id="resultImage" src="" alt="Card Preview">
                         
                         <div id="currentStyleLabel" class="style-badge">Default Style</div>
                     </div>
                 
-                    <div class="slider-btn next" onclick="changeStyle(1)">
-                        <span class="material-symbols-outlined">arrow_forward_ios</span>
-                    </div>
+                    <div class="pagination-dots" id="styleDots">
+                        </div>
+
                 </div>
                 <div class="action-buttons">
                     <button class="btn-download" onclick="downloadImage()">
@@ -69,6 +66,7 @@
 
                 <div class="input-section">
                     <label class="section-label">၃။ ဓာတ်ပုံ ထည့်သွင်းရန်</label>
+                    
                     <div class="upload-container" onclick="document.getElementById('logoUpload').click()">
                         <div class="upload-icon">
                             <span class="material-symbols-outlined">crop_free</span>
