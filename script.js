@@ -17,16 +17,16 @@ const styleOptions = [
     { id: 'layout_gradient', label: 'Gradient Style' },
     { id: 'layout_material', label: 'Material Style' },
     { id: 'layout_modern', label: 'Modern Style' },
-    { id: 'layout_midnight', label: 'Midnight Pro' },        // New
-    { id: 'layout_golden', label: 'Royal Gold' },            // New
-    { id: 'layout_cyber', label: 'Cyberpunk Neon' },         // New
-    { id: 'layout_nature', label: 'Nature Fresh' },          // New
-    { id: 'layout_glass', label: 'Glassmorphism' },          // New
-    { id: 'layout_minimal', label: 'Minimalist White' },     // New
-    { id: 'layout_geometric', label: 'Geometric Fun' },      // New
-    { id: 'layout_split', label: 'Vertical Split' },         // New
-    { id: 'layout_ocean', label: 'Ocean Waves' },            // New
-    { id: 'layout_ruby', label: 'Ruby Red' }                 // New
+    { id: 'layout_midnight', label: 'Midnight Pro' },        
+    { id: 'layout_golden', label: 'Royal Gold' },            
+    { id: 'layout_cyber', label: 'Cyberpunk Neon' },         
+    { id: 'layout_nature', label: 'Nature Fresh' },          
+    { id: 'layout_glass', label: 'Glassmorphism' },          
+    { id: 'layout_minimal', label: 'Minimalist White' },     
+    { id: 'layout_geometric', label: 'Geometric Fun' },      
+    { id: 'layout_split', label: 'Vertical Split' },         
+    { id: 'layout_ocean', label: 'Ocean Waves' },            
+    { id: 'layout_ruby', label: 'Ruby Red' }                 
 ];
 let currentStyleIndex = 0;
 
@@ -119,8 +119,9 @@ function updateStyleLabel() {
     if(labelEl) labelEl.innerText = styleOptions[currentStyleIndex].label;
 }
 
-// --- RENDER FUNCTION (Expanded) ---
+// --- RENDER FUNCTION ---
 function render() {
+    // Name Case Fix: Removed .toUpperCase()
     const name = document.getElementById('nameInput').value || "Name Here";
     const acct = document.getElementById('acctInput').value || "000-000-0000";
     const style = styleOptions[currentStyleIndex].id;
@@ -137,7 +138,6 @@ function render() {
         case 'layout_gradient': drawGradient(w, h, name, acct); break;
         case 'layout_material': drawMaterial(w, h, name, acct); break;
         case 'layout_modern': drawModern(w, h, name, acct); break;
-        // New Styles
         case 'layout_midnight': drawMidnight(w, h, name, acct); break;
         case 'layout_golden': drawGolden(w, h, name, acct); break;
         case 'layout_cyber': drawCyber(w, h, name, acct); break;
@@ -154,8 +154,22 @@ function render() {
     imgOutput.src = canvas.toDataURL("image/png");
 }
 
-// --- HELPER: ROUND RECT ---
-if (!ctx.roundRect) ctx.roundRect = function(x, y, w, h, r) { ctx.rect(x,y,w,h); return this; };
+// --- SAFE ROUND RECT HELPER (Works on all browsers) ---
+function drawRoundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    // Note: This helper includes ctx.fill(), caller should set fillStyle before
+}
 
 // --- DRAWING FUNCTIONS ---
 
@@ -179,7 +193,11 @@ function drawBBLStyle(w, h, name, acct) {
 
     // Photo Box
     const boxSize = 160; const boxX = w - 210; const boxY = 40;
-    ctx.fillStyle = "#f8f9fa"; ctx.beginPath(); ctx.roundRect(boxX, boxY, boxSize, boxSize, 20); ctx.fill();
+    ctx.fillStyle = "#f8f9fa"; 
+    
+    // Using Safe Helper
+    drawRoundedRect(ctx, boxX, boxY, boxSize, boxSize, 20); 
+    
     ctx.strokeStyle = mainColor; ctx.lineWidth = 4; ctx.stroke();
     if (uploadedUserImg) { ctx.save(); ctx.clip(); ctx.drawImage(uploadedUserImg, boxX, boxY, boxSize, boxSize); ctx.restore(); }
     else { ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText("QR/PHOTO", boxX + boxSize/2, boxY + boxSize/2); }
@@ -203,7 +221,9 @@ function drawGradient(w, h, name, acct) {
     
     ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
     ctx.shadowColor = "rgba(0,0,0,0.2)"; ctx.shadowBlur = 30;
-    ctx.beginPath(); ctx.roundRect(100, 100, w-200, h-200, 30); ctx.fill(); ctx.shadowBlur = 0;
+    
+    drawRoundedRect(ctx, 100, 100, w-200, h-200, 30);
+    ctx.shadowBlur = 0;
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130, 130, 80, 80);
     ctx.textAlign = "left"; ctx.fillStyle = currentBank.color; ctx.font = "bold 40px Roboto";
@@ -222,11 +242,22 @@ function drawGradient(w, h, name, acct) {
 // 3. MATERIAL
 function drawMaterial(w, h, name, acct) {
     ctx.fillStyle = "#f5f5f5"; ctx.fillRect(0,0,w,h);
+    
+    // Card Base
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(0,0,0,0.15)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
-    ctx.beginPath(); ctx.roundRect(80, 80, w-160, h-160, 16); ctx.fill(); ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    drawRoundedRect(ctx, 80, 80, w-160, h-160, 16);
+    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     
-    ctx.fillStyle = currentBank.color; ctx.beginPath(); ctx.roundRect(80, 80, w-160, 20, [16,16,0,0]); ctx.fill();
+    // Header (Custom top-rounded only)
+    ctx.fillStyle = currentBank.color; 
+    ctx.beginPath();
+    const hx=80, hy=80, hw=w-160, hh=20, rad=16;
+    ctx.moveTo(hx + rad, hy); ctx.lineTo(hx + hw - rad, hy);
+    ctx.quadraticCurveTo(hx + hw, hy, hx + hw, hy + rad);
+    ctx.lineTo(hx + hw, hy + hh); ctx.lineTo(hx, hy + hh);
+    ctx.lineTo(hx, hy + rad); ctx.quadraticCurveTo(hx, hy, hx + rad, hy);
+    ctx.fill();
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 140, 80, 80);
     if(uploadedUserImg) {
@@ -258,7 +289,6 @@ function drawMidnight(w, h, name, acct) {
     grd.addColorStop(0, "#1a1a1a"); grd.addColorStop(1, "#000000");
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
-    // Accent lines
     ctx.strokeStyle = currentBank.color; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(50, 180); ctx.lineTo(w-50, 180); ctx.stroke();
     
@@ -286,8 +316,8 @@ function drawGolden(w, h, name, acct) {
     grd.addColorStop(0.6, "#B38728"); grd.addColorStop(1, "#FBF5B7");
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
-    // Card Frame
-    ctx.fillStyle = "#000"; ctx.beginPath(); ctx.roundRect(50, 50, w-100, h-100, 30); ctx.fill();
+    ctx.fillStyle = "#000"; 
+    drawRoundedRect(ctx, 50, 50, w-100, h-100, 30);
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 100, 100, 80, 80);
     
@@ -301,7 +331,6 @@ function drawGolden(w, h, name, acct) {
 function drawCyber(w, h, name, acct) {
     ctx.fillStyle = "#050505"; ctx.fillRect(0,0,w,h);
     
-    // Neon Glow
     ctx.shadowColor = currentBank.color; ctx.shadowBlur = 20;
     ctx.strokeStyle = currentBank.color; ctx.lineWidth = 5;
     ctx.strokeRect(50, 50, w-100, h-100);
@@ -325,12 +354,12 @@ function drawNature(w, h, name, acct) {
     grd.addColorStop(0, "#a8e063"); grd.addColorStop(1, "#56ab2f");
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
-    // Circles overlay
     ctx.fillStyle = "rgba(255,255,255,0.2)";
     ctx.beginPath(); ctx.arc(0, 0, 300, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(w, h, 400, 0, Math.PI*2); ctx.fill();
     
-    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.roundRect(80, 120, w-160, h-240, 20); ctx.fill();
+    ctx.fillStyle = "#fff"; 
+    drawRoundedRect(ctx, 80, 120, w-160, h-240, 20);
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 150, 80, 80);
     
@@ -342,14 +371,13 @@ function drawNature(w, h, name, acct) {
 
 // 9. GLASSMORPHISM
 function drawGlass(w, h, name, acct) {
-    // Colorful BG
     let grd = ctx.createLinearGradient(0, 0, w, h);
     grd.addColorStop(0, "#FF3CAC"); grd.addColorStop(0.5, "#784BA0"); grd.addColorStop(1, "#2B86C5");
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
-    // Glass Pane
     ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-    ctx.beginPath(); ctx.roundRect(100, 100, w-200, h-200, 30); ctx.fill();
+    drawRoundedRect(ctx, 100, 100, w-200, h-200, 30);
+    
     ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 2; ctx.stroke();
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 140, 140, 80, 80);
@@ -380,12 +408,12 @@ function drawMinimal(w, h, name, acct) {
 function drawGeometric(w, h, name, acct) {
     ctx.fillStyle = "#2C3E50"; ctx.fillRect(0,0,w,h);
     
-    // Shapes
     ctx.fillStyle = "#E74C3C"; ctx.beginPath(); ctx.arc(100, 100, 150, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = "#F1C40F"; ctx.beginPath(); ctx.moveTo(w, 0); ctx.lineTo(w-300, 0); ctx.lineTo(w, 300); ctx.fill();
     ctx.fillStyle = "#3498DB"; ctx.beginPath(); ctx.rect(100, h-200, 200, 200); ctx.fill();
     
-    ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.beginPath(); ctx.roundRect(150, 150, w-300, h-300, 20); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)"; 
+    drawRoundedRect(ctx, 150, 150, w-300, h-300, 20);
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40, 180, 80, 80);
     
@@ -400,12 +428,10 @@ function drawSplit(w, h, name, acct) {
     
     ctx.fillStyle = currentBank.color; ctx.fillRect(0,0, w*0.4, h);
     
-    // Left side
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80, 80, 120, 120);
     ctx.fillStyle = "#fff"; ctx.textAlign = "left"; 
     ctx.font = "bold 60px Roboto"; ctx.fillText(currentBank.short, 80, 280);
     
-    // Right side
     ctx.fillStyle = "#000";
     ctx.font = "bold 70px Roboto"; ctx.fillText(acct, w*0.45, 250);
     ctx.fillStyle = "#666";
