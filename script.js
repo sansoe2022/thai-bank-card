@@ -133,6 +133,18 @@ function updateStyleLabel() {
     if(labelEl) labelEl.innerText = styleOptions[currentStyleIndex].label;
 }
 
+// --- SWIPE GESTURES ---
+function initSwipeGestures() {
+    const swipeArea = document.getElementById('swipeArea');
+    let startX = 0; let endX = 0;
+    swipeArea.addEventListener('touchstart', (e) => { startX = e.changedTouches[0].screenX; }, {passive: true});
+    swipeArea.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].screenX;
+        if (endX < startX - 50) changeStyle(1);
+        else if (endX > startX + 50) changeStyle(-1);
+    }, {passive: true});
+}
+
 // --- RENDER FUNCTION ---
 function render() {
     try {
@@ -171,7 +183,7 @@ function render() {
     }
 }
 
-// --- DRAWING FUNCTIONS (Updated with Safe RoundRect) ---
+// --- DRAWING FUNCTIONS ---
 
 // 1. DEFAULT
 function drawBBLStyle(w, h, name, acct) {
