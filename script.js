@@ -11,7 +11,6 @@ const banks = [
     { id: 'cimbt', name: 'CIMB Thai', short: 'CIMBT', thName: 'ซีไอเอ็มบี', color: '#7e1a2d', logo: 'img/cimbt.png' }
 ];
 
-// --- STYLE CONFIGURATION (14 STYLES) ---
 const styleOptions = [
     { id: 'layout_bbl', label: 'Default Style' }, 
     { id: 'layout_gradient', label: 'Gradient Style' },
@@ -33,12 +32,10 @@ let currentStyleIndex = 0;
 let currentBank = banks[0];
 let uploadedUserImg = null;
 let bankLogoImg = new Image();
-
-// Cropper
 let cropper = null;
+
 const imageToCrop = document.getElementById('imageToCrop');
 const cropModal = document.getElementById('cropModalWrapper');
-
 const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
@@ -63,34 +60,29 @@ window.onload = function() {
     initSwipeGestures(); 
     initTheme(); 
     
-    // Check URL Params
+    // Auto Fill Check
     const urlParams = new URLSearchParams(window.location.search);
-    const shouldDownload = urlParams.get('dl');
-    const pBank = urlParams.get('b');
-    const pName = urlParams.get('n');
-    const pAcct = urlParams.get('a');
-
-    if (pBank) {
-        const targetBank = banks.find(b => b.id === pBank);
-        if (targetBank) currentBank = targetBank;
+    if (urlParams.get('b')) {
+        const t = banks.find(b => b.id === urlParams.get('b'));
+        if (t) currentBank = t;
     }
     
     updateStyleLabel();
     loadBankLogo(currentBank);
     
-    if (pName) document.getElementById('nameInput').value = decodeURIComponent(pName);
-    if (pAcct) document.getElementById('acctInput').value = decodeURIComponent(pAcct);
+    if (urlParams.get('n')) document.getElementById('nameInput').value = decodeURIComponent(urlParams.get('n'));
+    if (urlParams.get('a')) document.getElementById('acctInput').value = decodeURIComponent(urlParams.get('a'));
 
-    if (shouldDownload === '1' && !isFacebookBrowser()) {
+    if (urlParams.get('dl') === '1' && !isFacebookBrowser()) {
         setTimeout(() => { render(); setTimeout(downloadImage, 800); }, 500);
     }
 };
 
-// --- THEME MANAGEMENT ---
+// --- THEME SAVING ---
 function initTheme() {
-    const savedTheme = localStorage.getItem('appTheme');
-    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
-    else if (savedTheme === 'light') document.body.classList.remove('dark-mode');
+    const saved = localStorage.getItem('appTheme');
+    if (saved === 'dark') document.body.classList.add('dark-mode');
+    else if (saved === 'light') document.body.classList.remove('dark-mode');
     else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.body.classList.add('dark-mode');
     updateThemeIcon();
 }
@@ -103,70 +95,68 @@ function updateThemeIcon() {
     document.getElementById('themeBtn').innerHTML = `<span class="material-symbols-outlined">${document.body.classList.contains('dark-mode') ? 'light_mode' : 'dark_mode'}</span>`;
 }
 
-// --- DOTS & SLIDER LOGIC ---
+// --- SLIDER & ANIMATION ---
 function initDots() {
-    const container = document.getElementById('styleDots');
-    container.innerHTML = '';
-    styleOptions.forEach((_, index) => {
-        const dot = document.createElement('div');
-        dot.className = `dot ${index === 0 ? 'active' : ''}`;
-        dot.onclick = () => jumpToStyle(index);
-        container.appendChild(dot);
+    const c = document.getElementById('styleDots');
+    c.innerHTML = '';
+    styleOptions.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = `dot ${i === 0 ? 'active' : ''}`;
+        d.onclick = () => jumpToStyle(i);
+        c.appendChild(d);
     });
 }
-
 function updateDots() {
-    document.querySelectorAll('.dot').forEach((dot, index) => {
-        if (index === currentStyleIndex) dot.classList.add('active');
-        else dot.classList.remove('active');
+    document.querySelectorAll('.dot').forEach((d, i) => {
+        if (i === currentStyleIndex) d.classList.add('active'); else d.classList.remove('active');
     });
 }
-
-function jumpToStyle(index) {
-    if (index === currentStyleIndex) return;
-    currentStyleIndex = index;
+function jumpToStyle(i) {
+    if (i === currentStyleIndex) return;
+    currentStyleIndex = i;
     triggerAnimation();
     updateUIAndRender();
 }
-
-function changeStyle(direction) {
-    currentStyleIndex += direction;
+function changeStyle(d) {
+    currentStyleIndex += d;
     if (currentStyleIndex >= styleOptions.length) currentStyleIndex = 0;
     else if (currentStyleIndex < 0) currentStyleIndex = styleOptions.length - 1;
     triggerAnimation();
     updateUIAndRender();
 }
-
 function triggerAnimation() {
     const img = document.getElementById('resultImage');
     img.classList.remove('slide-animate');
-    void img.offsetWidth; 
+    void img.offsetWidth; // trigger reflow
     img.classList.add('slide-animate');
 }
-
-function updateUIAndRender() {
-    updateStyleLabel();
-    updateDots();
-    render();
-}
-
+function updateUIAndRender() { updateStyleLabel(); updateDots(); render(); }
 function updateStyleLabel() {
-    const labelEl = document.getElementById('currentStyleLabel');
-    if(labelEl) labelEl.innerText = styleOptions[currentStyleIndex].label;
+    document.getElementById('currentStyleLabel').innerText = styleOptions[currentStyleIndex].label;
 }
-
 function initSwipeGestures() {
-    const swipeArea = document.getElementById('swipeArea');
-    let startX = 0; let endX = 0;
-    swipeArea.addEventListener('touchstart', (e) => { startX = e.changedTouches[0].screenX; }, {passive: true});
-    swipeArea.addEventListener('touchend', (e) => {
-        endX = e.changedTouches[0].screenX;
-        if (endX < startX - 50) changeStyle(1);
-        else if (endX > startX + 50) changeStyle(-1);
+    const el = document.getElementById('swipeArea');
+    let sx = 0, ex = 0;
+    el.addEventListener('touchstart', (e) => sx = e.changedTouches[0].screenX, {passive: true});
+    el.addEventListener('touchend', (e) => {
+        ex = e.changedTouches[0].screenX;
+        if (ex < sx - 50) changeStyle(1); else if (ex > sx + 50) changeStyle(-1);
     }, {passive: true});
 }
 
-// --- RENDER FUNCTION ---
+// --- QR BOX DRAWER ---
+function drawQrBox(x, y, size, borderColor="#ccc") {
+    if (uploadedUserImg) {
+        ctx.save(); ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.closePath(); ctx.clip();
+        ctx.drawImage(uploadedUserImg, x, y, size, size); ctx.restore();
+    } else {
+        ctx.fillStyle = "#f8f9fa"; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.fill();
+        ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText("QR", x+size/2, y+size/2+7);
+    }
+    ctx.strokeStyle = borderColor; ctx.lineWidth = 4; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.stroke();
+}
+
+// --- RENDER ---
 function render() {
     try {
         const name = document.getElementById('nameInput').value || "Name Here";
@@ -174,8 +164,7 @@ function render() {
         const style = styleOptions[currentStyleIndex].id;
         
         canvas.width = 1000; canvas.height = 600;
-        const w = canvas.width; const h = canvas.height;
-
+        const w = 1000, h = 600;
         ctx.clearRect(0, 0, w, h);
         
         switch(style) {
@@ -195,356 +184,249 @@ function render() {
             case 'layout_ruby': drawRuby(w, h, name, acct); break;
             default: drawBBLStyle(w, h, name, acct);
         }
-        
         imgOutput.src = canvas.toDataURL("image/png");
-    } catch (e) {
-        console.error("Render error:", e);
-    }
+    } catch(e) { console.error(e); }
 }
 
-// --- QR DRAWER ---
-function drawQrBox(x, y, size, borderColor = "#ccc") {
-    if (uploadedUserImg) {
-        ctx.save(); 
-        ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.closePath(); ctx.clip();
-        ctx.drawImage(uploadedUserImg, x, y, size, size); 
-        ctx.restore();
-    } else {
-        ctx.fillStyle = "#f8f9fa";
-        ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.fill();
-        ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-        ctx.fillText("QR", x + size/2, y + size/2 + 7);
-    }
-    ctx.strokeStyle = borderColor; ctx.lineWidth = 4;
-    ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.stroke();
-}
-
-// --- DRAWING FUNCTIONS ---
-
-// 1. DEFAULT (Updated: Name & Short Code)
+// --- DRAWING STYLES ---
 function drawBBLStyle(w, h, name, acct) {
     const mainColor = currentBank.color;
     ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
-    if (bankLogoImg.complete && bankLogoImg.naturalHeight !== 0) ctx.drawImage(bankLogoImg, 50, 40, 150, 150);
-    else { ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(125, 115, 70, 0, Math.PI*2); ctx.fill(); }
+    if (bankLogoImg.complete && bankLogoImg.naturalHeight!==0) ctx.drawImage(bankLogoImg, 50, 40, 150, 150);
+    else { ctx.fillStyle=mainColor; ctx.beginPath(); ctx.arc(125,115,70,0,Math.PI*2); ctx.fill(); }
     
     ctx.fillStyle = "#ccc"; ctx.fillRect(230, 50, 4, 120);
-    let textX = 260;
     
-    // UPDATED: Show Full Name
-    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto, Arial"; ctx.textAlign = "left";
-    ctx.fillText(currentBank.name, textX, 110);
+    // UPDATED: Full Name & Short Code Labels
+    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto, Arial"; ctx.textAlign = "left"; 
+    ctx.fillText(currentBank.name, 260, 110);
     
-    ctx.fillStyle = "#555"; ctx.font = "bold 40px Kanit, Arial";
-    ctx.fillText(currentBank.thName || "ธนาคาร", textX, 160);
-    ctx.fillStyle = "#f97316"; ctx.fillRect(textX, 125, 300, 4);
+    ctx.fillStyle = "#555"; ctx.font = "bold 40px Kanit"; ctx.fillText(currentBank.thName||"Bank", 260, 160);
+    ctx.fillStyle = "#f97316"; ctx.fillRect(260, 125, 300, 4);
 
     drawQrBox(w - 210, 40, 160, mainColor);
 
     ctx.fillStyle = mainColor; ctx.fillRect(50, 250, 320, 80);
-    ctx.fillStyle = (currentBank.id === 'bay') ? currentBank.txtColor : "#fff";
+    ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
     
-    // UPDATED: Show Short Code instead of "BANK NUMBER"
-    ctx.font = "bold 45px Roboto"; ctx.textAlign = "center"; 
-    ctx.fillText(currentBank.short, 210, 305);
+    // UPDATED: Short Code Label
+    ctx.font = "bold 45px Roboto"; ctx.textAlign="center"; ctx.fillText(currentBank.short, 210, 305);
     
-    ctx.fillStyle = "#444"; ctx.font = "bold 80px Roboto"; ctx.textAlign = "left"; ctx.fillText(acct, 400, 315);
-    
-    ctx.fillStyle = mainColor; ctx.fillRect(50, 400, w - 100, 130);
-    ctx.fillStyle = (currentBank.id === 'bay') ? currentBank.txtColor : "#fff";
-    ctx.font = "bold 55px Roboto, Padauk"; ctx.textAlign = "left"; ctx.fillText(name, 90, 485);
+    ctx.fillStyle = "#444"; ctx.font = "bold 80px Roboto"; ctx.textAlign="left"; ctx.fillText(acct, 400, 315);
+    ctx.fillStyle = mainColor; ctx.fillRect(50, 400, w-100, 130);
+    ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
+    ctx.font = "bold 55px Roboto, Padauk"; ctx.fillText(name, 90, 485);
 }
 
-// 2. GRADIENT
 function drawGradient(w, h, name, acct) {
-    let grd = ctx.createLinearGradient(0, 0, w, h);
+    let grd = ctx.createLinearGradient(0,0,w,h);
     grd.addColorStop(0, currentBank.color); grd.addColorStop(1, "#f1f5f9");
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="rgba(255,255,255,0.95)"; ctx.shadowBlur=30; ctx.shadowColor="rgba(0,0,0,0.2)";
+    ctx.beginPath(); roundRectPath(ctx,100,100,w-200,h-200,30); ctx.fill(); ctx.shadowBlur=0;
     
-    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-    ctx.shadowColor = "rgba(0,0,0,0.2)"; ctx.shadowBlur = 30;
-    ctx.beginPath(); roundRectPath(ctx, 100, 100, w-200, h-200, 30); ctx.fill(); ctx.shadowBlur = 0;
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130,130,80,80);
+    ctx.fillStyle=currentBank.color; ctx.font="bold 40px Roboto"; ctx.textAlign="left"; ctx.fillText(currentBank.short, 230,185);
     
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130, 130, 80, 80);
-    ctx.textAlign = "left"; ctx.fillStyle = currentBank.color; ctx.font = "bold 40px Roboto";
-    ctx.fillText(currentBank.short, 230, 185);
-    
+    // Custom Circular QR for Gradient
     if(uploadedUserImg) {
-        ctx.save(); ctx.beginPath(); ctx.arc(w/2, 230, 60, 0, Math.PI*2); ctx.clip();
-        ctx.drawImage(uploadedUserImg, w/2 - 60, 170, 120, 120); ctx.restore();
+        ctx.save(); ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.clip();
+        ctx.drawImage(uploadedUserImg, w/2-60,170,120,120); ctx.restore();
     } else {
-        ctx.fillStyle = "#eee"; ctx.beginPath(); ctx.arc(w/2, 230, 60, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#ccc"; ctx.font = "bold 16px Arial"; ctx.textAlign = "center"; ctx.fillText("QR", w/2, 235);
+        ctx.fillStyle="#eee"; ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle="#ccc"; ctx.font="16px Arial"; ctx.textAlign="center"; ctx.fillText("QR", w/2, 235);
     }
-    ctx.beginPath(); ctx.arc(w/2, 230, 60, 0, Math.PI*2); ctx.strokeStyle = currentBank.color; ctx.lineWidth = 4; ctx.stroke();
+    ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.strokeStyle=currentBank.color; ctx.lineWidth=4; ctx.stroke();
     
-    ctx.textAlign = "center"; ctx.fillStyle = currentBank.color; ctx.font = "bold 60px Roboto"; ctx.fillText(acct, w/2, 350);
-    ctx.fillStyle = "#555"; ctx.font = "bold 40px Padauk"; ctx.fillText(name, w/2, 420);
+    ctx.fillStyle=currentBank.color; ctx.font="bold 60px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,350);
+    ctx.fillStyle="#555"; ctx.font="bold 40px Padauk"; ctx.fillText(name, w/2,420);
 }
 
-// 3. MATERIAL
 function drawMaterial(w, h, name, acct) {
-    ctx.fillStyle = "#f5f5f5"; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(0,0,0,0.15)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
-    ctx.beginPath(); roundRectPath(ctx, 80, 80, w-160, h-160, 16); ctx.fill();
-    ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+    ctx.fillStyle="#f5f5f5"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#fff"; ctx.shadowBlur=10; ctx.shadowColor="rgba(0,0,0,0.1)";
+    ctx.beginPath(); roundRectPath(ctx,80,80,w-160,h-160,16); ctx.fill(); ctx.shadowBlur=0;
     
-    ctx.fillStyle = currentBank.color; ctx.beginPath();
-    const hx=80, hy=80, hw=w-160, hh=20, rad=16;
-    ctx.moveTo(hx + rad, hy); ctx.lineTo(hx + hw - rad, hy);
-    ctx.quadraticCurveTo(hx + hw, hy, hx + hw, hy + rad);
-    ctx.lineTo(hx + hw, hy + hh); ctx.lineTo(hx, hy + hh);
-    ctx.lineTo(hx, hy + rad); ctx.quadraticCurveTo(hx, hy, hx + rad, hy);
+    ctx.fillStyle=currentBank.color; ctx.beginPath();
+    const x=80,y=80,rw=w-160,rh=20,r=16; 
+    ctx.moveTo(x+r,y); ctx.lineTo(x+rw-r,y); ctx.quadraticCurveTo(x+rw,y,x+rw,y+r);
+    ctx.lineTo(x+rw,y+rh); ctx.lineTo(x,y+rh); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
     ctx.fill();
     
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 140, 80, 80);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120,140,80,80);
     drawQrBox(w-240, 140, 80, currentBank.color);
 
-    ctx.textAlign = "left"; ctx.fillStyle = "#202124"; ctx.font = "bold 40px Roboto"; ctx.fillText(currentBank.name, 220, 180);
-    ctx.fillStyle = currentBank.color; ctx.font = "bold 70px Roboto"; ctx.fillText(acct, 120, 320);
-    ctx.fillStyle = "#202124"; ctx.font = "35px Padauk"; ctx.fillText(name, 120, 400);
+    ctx.textAlign="left"; ctx.fillStyle="#202124"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, 220,180);
+    ctx.fillStyle=currentBank.color; ctx.font="bold 70px Roboto"; ctx.fillText(acct, 120,320);
+    ctx.fillStyle="#202124"; ctx.font="35px Padauk"; ctx.fillText(name, 120,400);
 }
 
-// 4. MODERN
 function drawModern(w, h, name, acct) {
-    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = currentBank.color; ctx.fillRect(0,0, 30, h);
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 60, 50, 100, 100);
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=currentBank.color; ctx.fillRect(0,0,30,h);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 60,50,100,100);
     drawQrBox(w-180, 50, 120, currentBank.color);
     
-    ctx.textAlign = "left"; ctx.fillStyle = "#000"; ctx.font = "bold 40px Roboto"; ctx.fillText(currentBank.name, 190, 115);
-    ctx.fillStyle = currentBank.color; ctx.font = "bold 80px Roboto"; ctx.fillText(acct, 80, 320);
-    ctx.fillStyle = "#000"; ctx.font = "bold 50px Padauk"; ctx.fillText(name, 80, 470);
+    ctx.textAlign="left"; ctx.fillStyle="#000"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, 190,115);
+    ctx.fillStyle=currentBank.color; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 80,320);
+    ctx.fillStyle="#000"; ctx.font="bold 50px Padauk"; ctx.fillText(name, 80,470);
 }
 
-// 5. MIDNIGHT PRO
 function drawMidnight(w, h, name, acct) {
-    let grd = ctx.createLinearGradient(0, 0, 0, h);
-    grd.addColorStop(0, "#1a1a1a"); grd.addColorStop(1, "#000000");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
+    let grd=ctx.createLinearGradient(0,0,0,h); grd.addColorStop(0,"#1a1a1a"); grd.addColorStop(1,"#000");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle=currentBank.color; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(50,180); ctx.lineTo(w-50,180); ctx.stroke();
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
     
-    ctx.strokeStyle = currentBank.color; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(50, 180); ctx.lineTo(w-50, 180); ctx.stroke();
+    ctx.textAlign="left"; ctx.fillStyle="#fff"; ctx.font="bold 50px Roboto"; ctx.fillText(currentBank.name, 180,120);
+    ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Number", 50,250);
+    ctx.fillStyle="#fff"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 50,330);
+    ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Name", 50,450);
     
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50, 50, 100, 100);
-    
-    ctx.textAlign = "left"; ctx.fillStyle = "#fff"; ctx.font = "bold 50px Roboto"; ctx.fillText(currentBank.name, 180, 120);
-    ctx.fillStyle = "#888"; ctx.font = "30px Roboto"; ctx.fillText("Account Number", 50, 250);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 80px Roboto"; ctx.fillText(acct, 50, 330);
-    ctx.fillStyle = "#888"; ctx.font = "30px Roboto"; ctx.fillText("Account Name", 50, 450);
-    ctx.fillStyle = "#ffffff"; ctx.font = "bold 60px Padauk"; ctx.fillText(name, 50, 520);
+    // UPDATED: White Name
+    ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,520);
     
     drawQrBox(w-220, 40, 120, "#fff");
 }
 
-// 6. ROYAL GOLD
 function drawGolden(w, h, name, acct) {
-    let grd = ctx.createLinearGradient(0, 0, w, h);
-    grd.addColorStop(0, "#BF953F"); grd.addColorStop(0.3, "#FCF6BA");
-    grd.addColorStop(0.6, "#B38728"); grd.addColorStop(1, "#FBF5B7");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
-    
-    ctx.fillStyle = "#000"; 
-    ctx.beginPath(); roundRectPath(ctx, 50, 50, w-100, h-100, 30); ctx.fill();
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 100, 100, 80, 80);
+    let grd=ctx.createLinearGradient(0,0,w,h); grd.addColorStop(0,"#BF953F"); grd.addColorStop(0.5,"#FCF6BA"); grd.addColorStop(1,"#B38728");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#000"; ctx.beginPath(); roundRectPath(ctx,50,50,w-100,h-100,30); ctx.fill();
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 100,100,80,80);
     drawQrBox(w-200, 100, 100, "#BF953F");
-
-    ctx.textAlign = "left"; ctx.fillStyle = "#BF953F"; ctx.font = "bold 40px Roboto"; ctx.fillText(currentBank.short, 200, 155);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 70px Roboto"; ctx.textAlign = "center"; ctx.fillText(acct, w/2, 300);
-    ctx.fillStyle = "#BF953F"; ctx.font = "bold 50px Padauk"; ctx.fillText(name, w/2, 450);
+    
+    ctx.textAlign="left"; ctx.fillStyle="#BF953F"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.short, 200,155);
+    ctx.fillStyle="#fff"; ctx.font="bold 70px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,300);
+    ctx.fillStyle="#BF953F"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w/2,450);
 }
 
-// 7. CYBERPUNK (Updated: QR Beside Logo)
 function drawCyber(w, h, name, acct) {
-    ctx.fillStyle = "#050505"; ctx.fillRect(0,0,w,h);
-    ctx.shadowColor = currentBank.color; ctx.shadowBlur = 20;
-    ctx.strokeStyle = currentBank.color; ctx.lineWidth = 5;
-    ctx.strokeRect(50, 50, w-100, h-100); ctx.shadowBlur = 0;
+    ctx.fillStyle="#050505"; ctx.fillRect(0,0,w,h);
+    ctx.shadowColor=currentBank.color; ctx.shadowBlur=20; ctx.strokeStyle=currentBank.color; ctx.lineWidth=5;
+    ctx.strokeRect(50,50,w-100,h-100); ctx.shadowBlur=0;
     
-    // Logo Left
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80, 80, 100, 100);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,80,100,100);
     
     // UPDATED: QR Beside Logo
     drawQrBox(200, 80, 100, currentBank.color);
-
-    ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = "bold 40px Roboto"; 
-    ctx.fillText(currentBank.name, w-80, 140);
     
-    ctx.textAlign = "left"; 
-    ctx.shadowColor = currentBank.color; ctx.shadowBlur = 10;
-    ctx.fillStyle = "#fff"; ctx.font = "bold 90px Roboto"; ctx.fillText(acct, 80, 350); ctx.shadowBlur = 0;
+    ctx.textAlign="right"; ctx.fillStyle="#fff"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, w-80,140);
+    ctx.textAlign="left"; ctx.shadowColor=currentBank.color; ctx.shadowBlur=10;
+    ctx.fillStyle="#fff"; ctx.font="bold 90px Roboto"; ctx.fillText(acct, 80,350); ctx.shadowBlur=0;
     
-    ctx.fillStyle = "#ffffff"; ctx.font = "bold 60px Padauk"; ctx.fillText(name, 80, 500);
+    // UPDATED: White Name
+    ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 80,500);
 }
 
-// 8. NATURE FRESH
 function drawNature(w, h, name, acct) {
-    let grd = ctx.createLinearGradient(0, 0, 0, h);
-    grd.addColorStop(0, "#a8e063"); grd.addColorStop(1, "#56ab2f");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
+    let grd=ctx.createLinearGradient(0,0,0,h); grd.addColorStop(0,"#a8e063"); grd.addColorStop(1,"#56ab2f");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="rgba(255,255,255,0.2)"; ctx.beginPath(); ctx.arc(0,0,300,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w,h,400,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); roundRectPath(ctx,80,120,w-160,h-240,20); ctx.fill();
     
-    ctx.fillStyle = "rgba(255,255,255,0.2)";
-    ctx.beginPath(); ctx.arc(0, 0, 300, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(w, h, 400, 0, Math.PI*2); ctx.fill();
-    
-    ctx.fillStyle = "#fff"; ctx.beginPath(); roundRectPath(ctx, 80, 120, w-160, h-240, 20); ctx.fill();
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 150, 80, 80);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120,150,80,80);
     drawQrBox(w-220, 150, 80, "#56ab2f");
-
-    ctx.textAlign = "left"; ctx.fillStyle = "#2c3e50"; ctx.font = "bold 40px Roboto"; ctx.fillText(currentBank.name, 230, 200);
-    ctx.fillStyle = "#2c3e50"; ctx.font = "bold 80px Roboto"; ctx.textAlign = "center"; ctx.fillText(acct, w/2, 340);
-    ctx.fillStyle = "#56ab2f"; ctx.font = "bold 45px Padauk"; ctx.fillText(name, w/2, 420);
+    
+    ctx.textAlign="left"; ctx.fillStyle="#2c3e50"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, 230,200);
+    ctx.fillStyle="#2c3e50"; ctx.font="bold 80px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,340);
+    ctx.fillStyle="#56ab2f"; ctx.font="bold 45px Padauk"; ctx.fillText(name, w/2,420);
 }
 
-// 9. GLASSMORPHISM
 function drawGlass(w, h, name, acct) {
-    let grd = ctx.createLinearGradient(0, 0, w, h);
-    grd.addColorStop(0, "#FF3CAC"); grd.addColorStop(0.5, "#784BA0"); grd.addColorStop(1, "#2B86C5");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
+    let grd=ctx.createLinearGradient(0,0,w,h); grd.addColorStop(0,"#FF3CAC"); grd.addColorStop(0.5,"#784BA0"); grd.addColorStop(1,"#2B86C5");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="rgba(255,255,255,0.25)"; ctx.beginPath(); roundRectPath(ctx,100,100,w-200,h-200,30); ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.lineWidth=2; ctx.stroke();
     
-    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-    ctx.beginPath(); roundRectPath(ctx, 100, 100, w-200, h-200, 30); ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 2; ctx.stroke();
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 140, 140, 80, 80);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 140,140,80,80);
     drawQrBox(w-240, 140, 80, "#fff");
-
-    ctx.textAlign = "left"; ctx.fillStyle = "#fff"; ctx.font = "bold 40px Roboto"; ctx.fillText(currentBank.short, 250, 195);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 70px Roboto"; ctx.textAlign = "center"; ctx.fillText(acct, w/2, 320);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 50px Padauk"; ctx.fillText(name, w/2, 420);
+    
+    ctx.textAlign="left"; ctx.fillStyle="#fff"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.short, 250,195);
+    ctx.fillStyle="#fff"; ctx.font="bold 70px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,320);
+    ctx.fillStyle="#fff"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w/2,420);
 }
 
-// 10. MINIMALIST WHITE
 function drawMinimal(w, h, name, acct) {
-    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 4; ctx.strokeRect(30,30,w-60,h-60);
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50, 80, 100, 100);
-    
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle="#000"; ctx.lineWidth=4; ctx.strokeRect(30,30,w-60,h-60);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50,80,100,100);
     drawQrBox(w-160, 50, 100, "#000");
-
-    ctx.fillStyle = "#000"; ctx.textAlign = "center"; ctx.font = "30px Roboto"; ctx.fillText("ACCOUNT DETAILS", w/2, 250);
-    ctx.font = "bold 90px Roboto"; ctx.fillText(acct, w/2, 350);
-    ctx.fillRect(w/2-100, 400, 200, 2); ctx.font = "40px Padauk"; ctx.fillText(name, w/2, 480);
+    
+    ctx.fillStyle="#000"; ctx.textAlign="center"; ctx.font="30px Roboto"; ctx.fillText("ACCOUNT DETAILS", w/2,250);
+    ctx.font="bold 90px Roboto"; ctx.fillText(acct, w/2,350);
+    ctx.fillRect(w/2-100,400,200,2); ctx.font="40px Padauk"; ctx.fillText(name, w/2,480);
 }
 
-// 11. GEOMETRIC FUN
 function drawGeometric(w, h, name, acct) {
-    ctx.fillStyle = "#2C3E50"; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = "#E74C3C"; ctx.beginPath(); ctx.arc(100, 100, 150, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#F1C40F"; ctx.beginPath(); ctx.moveTo(w, 0); ctx.lineTo(w-300, 0); ctx.lineTo(w, 300); ctx.fill();
-    ctx.fillStyle = "#3498DB"; ctx.beginPath(); ctx.rect(100, h-200, 200, 200); ctx.fill();
+    ctx.fillStyle="#2C3E50"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#E74C3C"; ctx.beginPath(); ctx.arc(100,100,150,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#F1C40F"; ctx.beginPath(); ctx.moveTo(w,0); ctx.lineTo(w-300,0); ctx.lineTo(w,300); ctx.fill();
+    ctx.fillStyle="#3498DB"; ctx.beginPath(); ctx.rect(100,h-200,200,200); ctx.fill();
     
-    ctx.fillStyle = "rgba(255,255,255,0.9)"; ctx.beginPath(); roundRectPath(ctx, 150, 150, w-300, h-300, 20); ctx.fill();
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40, 180, 80, 80);
+    ctx.fillStyle="rgba(255,255,255,0.9)"; ctx.beginPath(); roundRectPath(ctx,150,150,w-300,h-300,20); ctx.fill();
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40,180,80,80);
     drawQrBox(w-250, 170, 60, "#333");
-
-    ctx.fillStyle = "#000"; ctx.textAlign = "center";
-    ctx.font = "bold 70px Roboto"; ctx.fillText(acct, w/2, 330);
-    ctx.font = "bold 45px Padauk"; ctx.fillText(name, w/2, 410);
+    
+    ctx.fillStyle="#000"; ctx.textAlign="center"; ctx.font="bold 70px Roboto"; ctx.fillText(acct, w/2,330);
+    ctx.font="bold 45px Padauk"; ctx.fillText(name, w/2,410);
 }
 
-// 12. VERTICAL SPLIT (Updated: QR Under BBL)
 function drawSplit(w, h, name, acct) {
-    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=currentBank.color; ctx.fillRect(0,0,w*0.4,h);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,80,120,120);
+    ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Roboto"; ctx.fillText(currentBank.short, 80,280);
     
-    ctx.fillStyle = currentBank.color; ctx.fillRect(0,0, w*0.4, h);
+    // UPDATED: QR Under BBL
+    drawQrBox(80, 320, 120, "#fff");
     
-    // Logo moved up
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80, 50, 120, 120);
-    
-    // Text moved up
-    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; 
-    ctx.font = "bold 60px Roboto"; ctx.fillText(currentBank.short, 80, 220);
-    
-    // UPDATED: QR Below Text
-    drawQrBox(80, 260, 120, "#fff");
-
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 70px Roboto"; ctx.fillText(acct, w*0.45, 250);
-    ctx.fillStyle = "#666";
-    ctx.font = "bold 50px Padauk"; ctx.fillText(name, w*0.45, 350);
+    ctx.fillStyle="#000"; ctx.font="bold 70px Roboto"; ctx.fillText(acct, w*0.45,250);
+    ctx.fillStyle="#666"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w*0.45,350);
 }
 
-// 13. OCEAN WAVES
 function drawOcean(w, h, name, acct) {
-    ctx.fillStyle = "#E0F7FA"; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = "#0288D1"; ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, 300); ctx.bezierCurveTo(300, 400, 700, 200, w, 300); ctx.lineTo(w, h); ctx.fill();
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50, 50, 100, 100);
+    ctx.fillStyle="#E0F7FA"; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle="#0288D1"; ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(0,300); ctx.bezierCurveTo(300,400,700,200,w,300); ctx.lineTo(w,h); ctx.fill();
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
     drawQrBox(180, 50, 100, "#01579B");
-
-    ctx.fillStyle = "#01579B"; ctx.textAlign = "right"; ctx.font = "bold 60px Roboto"; ctx.fillText(acct, w-50, 150);
-    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.font = "bold 60px Padauk"; ctx.fillText(name, 50, 500);
+    
+    ctx.fillStyle="#01579B"; ctx.textAlign="right"; ctx.font="bold 60px Roboto"; ctx.fillText(acct, w-50,150);
+    ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,500);
 }
 
-// 14. RUBY RED
 function drawRuby(w, h, name, acct) {
-    let grd = ctx.createRadialGradient(w/2, h/2, 50, w/2, h/2, 500);
-    grd.addColorStop(0, "#D32F2F"); grd.addColorStop(1, "#880E4F");
-    ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
-    
-    ctx.strokeStyle = "#FFCDD2"; ctx.lineWidth = 10; ctx.strokeRect(50,50,w-100,h-100);
-    
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50, 100, 100, 100);
+    let grd=ctx.createRadialGradient(w/2,h/2,50,w/2,h/2,500); grd.addColorStop(0,"#D32F2F"); grd.addColorStop(1,"#880E4F");
+    ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle="#FFCDD2"; ctx.lineWidth=10; ctx.strokeRect(50,50,w-100,h-100);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50,100,100,100);
     drawQrBox(w-200, 100, 100, "#fff");
-
-    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; 
-    ctx.font = "bold 80px Roboto"; ctx.fillText(acct, w/2, 320);
-    ctx.font = "40px Padauk"; ctx.fillText(name, w/2, 420);
+    
+    ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, w/2,320);
+    ctx.font="40px Padauk"; ctx.fillText(name, w/2,420);
 }
 
-// --- FACEBOOK BROWSER DETECT ---
+// --- UTIL ---
 function isFacebookBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
 }
-
-// --- DOWNLOAD FUNCTION ---
 function downloadImage() {
-    if (isFacebookBrowser()) {
-        showFacebookBrowserDialog();
-    } else {
+    if (isFacebookBrowser()) showFacebookBrowserDialog();
+    else {
         render(); 
-        const fileName = `BankCard-${currentBank.short}-${Date.now()}.png`;
-        canvas.toBlob(function(blob) {
-            if (!blob) return;
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.download = fileName; link.href = url;
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        }, 'image/png');
+        const link = document.createElement('a');
+        link.download = `BankCard-${currentBank.short}-${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 }
-
 function showFacebookBrowserDialog() {
-    const modalBackdrop = document.createElement('div');
-    modalBackdrop.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; font-family: sans-serif;`;
-    
-    const dialog = document.createElement('div');
-    dialog.style.cssText = `background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center;`;
-    
-    dialog.innerHTML = `<h3 style="color: #1877F2;">Facebook Browser Detected</h3><p>Please open in Chrome/Safari to download.</p>
-    <div style="display: flex; gap: 10px; margin-top: 15px;"><button id="fbBack" style="flex:1; padding: 10px;">Back</button><button id="fbOpen" style="flex:1; padding: 10px;">Open External</button></div>`;
-    
-    modalBackdrop.appendChild(dialog);
-    document.body.appendChild(modalBackdrop);
-    
-    document.getElementById('fbBack').onclick = () => document.body.removeChild(modalBackdrop);
-    document.getElementById('fbOpen').onclick = () => { document.body.removeChild(modalBackdrop); openInExternalBrowser(); };
+    const d = document.createElement('div');
+    d.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;`;
+    d.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; text-align:center;"><p>Please open in external browser</p><button onclick="document.body.removeChild(this.parentNode.parentNode)">Close</button></div>`;
+    document.body.appendChild(d);
 }
-
-function openInExternalBrowser() {
-    const fullURL = window.location.href;
-    window.location.href = `intent://${fullURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
-}
-
-// --- CROP HANDLERS ---
 function handleLogoUpload(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -569,4 +451,35 @@ function confirmCrop() {
 function closeCropModal() {
     cropModal.style.display = 'none';
     if(cropper) { cropper.destroy(); cropper = null; }
+}
+function initBankGrid() {
+    const grid = document.getElementById('bankGrid');
+    grid.innerHTML = '';
+    banks.forEach(bank => {
+        const div = document.createElement('div');
+        div.className = 'bank-item';
+        if(bank.id === currentBank.id) div.classList.add('active');
+        div.innerHTML = `<img src="${bank.logo}" onerror="this.src='https://via.placeholder.com/40'"><span>${bank.short}</span>`;
+        div.onclick = () => selectBank(bank, div);
+        grid.appendChild(div);
+    });
+}
+function selectBank(bank, div) {
+    currentBank = bank;
+    document.querySelectorAll('.bank-item').forEach(el => el.classList.remove('active'));
+    div.classList.add('active');
+    loadBankLogo(bank);
+}
+function loadBankLogo(bank) {
+    bankLogoImg.src = bank.logo;
+    bankLogoImg.onload = () => render();
+    bankLogoImg.onerror = () => render(); 
+}
+function resetForm() {
+    document.getElementById('nameInput').value = "";
+    document.getElementById('acctInput').value = "";
+    uploadedUserImg = null;
+    currentStyleIndex = 0; 
+    updateUIAndRender();
+    selectBank(banks[0], document.querySelector('.bank-item'));
 }
