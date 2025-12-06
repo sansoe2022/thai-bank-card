@@ -75,22 +75,22 @@ body {
     border-radius: 12px; overflow: hidden;
     background: #ffffff; box-shadow: var(--md-elevation-1);
     cursor: grab; user-select: none;
+    transform: scale(1); transition: transform 0.1s ease;
 }
-.image-wrapper:active { cursor: grabbing; }
+.image-wrapper:active { cursor: grabbing; transform: scale(0.98); }
 
 #resultImage {
     width: 100%; height: 100%; object-fit: cover;
     display: block; pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* ANIMATION CLASS */
-.slide-animate {
-    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ZOOM ANIMATION CLASS */
+.zoom-animate {
+    animation: zoomSlide 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes slideIn {
-    0% { transform: translateX(20px); opacity: 0.6; }
-    100% { transform: translateX(0); opacity: 1; }
+@keyframes zoomSlide {
+    0% { opacity: 0; transform: scale(0.85); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 .style-badge {
@@ -107,7 +107,7 @@ body {
 .dot {
     width: 8px; height: 8px; border-radius: 50%;
     background-color: var(--md-sys-color-outline-variant);
-    cursor: pointer; transition: all 0.3s;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .dot.active { background-color: var(--md-sys-color-primary); transform: scale(1.25); }
 
