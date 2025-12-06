@@ -11,6 +11,7 @@ const banks = [
     { id: 'cimbt', name: 'CIMB Thai', short: 'CIMBT', thName: 'ซีไอเอ็มบี', color: '#7e1a2d', logo: 'img/cimbt.png' }
 ];
 
+// --- STYLE CONFIGURATION (14 STYLES) ---
 const styleOptions = [
     { id: 'layout_bbl', label: 'Default Style' }, 
     { id: 'layout_gradient', label: 'Gradient Style' },
@@ -40,7 +41,7 @@ const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
-// --- HELPER: SAFE ROUND RECT PATH ---
+// --- HELPER: SAFE ROUND RECT PATH (IMPORTANT FIX) ---
 function roundRectPath(ctx, x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
     if (h < 2 * r) r = h / 2;
@@ -83,7 +84,9 @@ function initTheme() {
     const saved = localStorage.getItem('appTheme');
     if (saved === 'dark') document.body.classList.add('dark-mode');
     else if (saved === 'light') document.body.classList.remove('dark-mode');
-    else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) document.body.classList.add('dark-mode');
+    else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark-mode');
+    }
     updateThemeIcon();
 }
 function toggleTheme() {
@@ -126,9 +129,9 @@ function changeStyle(d) {
 }
 function triggerAnimation() {
     const img = document.getElementById('resultImage');
-    img.classList.remove('slide-animate');
+    img.classList.remove('zoom-animate');
     void img.offsetWidth; // trigger reflow
-    img.classList.add('slide-animate');
+    img.classList.add('zoom-animate');
 }
 function updateUIAndRender() { updateStyleLabel(); updateDots(); render(); }
 function updateStyleLabel() {
@@ -196,11 +199,8 @@ function drawBBLStyle(w, h, name, acct) {
     else { ctx.fillStyle=mainColor; ctx.beginPath(); ctx.arc(125,115,70,0,Math.PI*2); ctx.fill(); }
     
     ctx.fillStyle = "#ccc"; ctx.fillRect(230, 50, 4, 120);
-    
-    // UPDATED: Full Name & Short Code Labels
-    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto, Arial"; ctx.textAlign = "left"; 
+    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto"; ctx.textAlign = "left"; 
     ctx.fillText(currentBank.name, 260, 110);
-    
     ctx.fillStyle = "#555"; ctx.font = "bold 40px Kanit"; ctx.fillText(currentBank.thName||"Bank", 260, 160);
     ctx.fillStyle = "#f97316"; ctx.fillRect(260, 125, 300, 4);
 
@@ -209,13 +209,13 @@ function drawBBLStyle(w, h, name, acct) {
     ctx.fillStyle = mainColor; ctx.fillRect(50, 250, 320, 80);
     ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
     
-    // UPDATED: Short Code Label
+    // SHORT CODE as BANK NUMBER
     ctx.font = "bold 45px Roboto"; ctx.textAlign="center"; ctx.fillText(currentBank.short, 210, 305);
     
     ctx.fillStyle = "#444"; ctx.font = "bold 80px Roboto"; ctx.textAlign="left"; ctx.fillText(acct, 400, 315);
     ctx.fillStyle = mainColor; ctx.fillRect(50, 400, w-100, 130);
     ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
-    ctx.font = "bold 55px Roboto, Padauk"; ctx.fillText(name, 90, 485);
+    ctx.font = "bold 55px Roboto, Padauk"; ctx.textAlign = "left"; ctx.fillText(name, 90, 485);
 }
 
 function drawGradient(w, h, name, acct) {
@@ -228,7 +228,7 @@ function drawGradient(w, h, name, acct) {
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130,130,80,80);
     ctx.fillStyle=currentBank.color; ctx.font="bold 40px Roboto"; ctx.textAlign="left"; ctx.fillText(currentBank.short, 230,185);
     
-    // Custom Circular QR for Gradient
+    // Circular Photo
     if(uploadedUserImg) {
         ctx.save(); ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.clip();
         ctx.drawImage(uploadedUserImg, w/2-60,170,120,120); ctx.restore();
@@ -238,7 +238,7 @@ function drawGradient(w, h, name, acct) {
     }
     ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.strokeStyle=currentBank.color; ctx.lineWidth=4; ctx.stroke();
     
-    ctx.fillStyle=currentBank.color; ctx.font="bold 60px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,350);
+    ctx.textAlign="center"; ctx.fillStyle=currentBank.color; ctx.font="bold 60px Roboto"; ctx.fillText(acct, w/2,350);
     ctx.fillStyle="#555"; ctx.font="bold 40px Padauk"; ctx.fillText(name, w/2,420);
 }
 
@@ -282,8 +282,7 @@ function drawMidnight(w, h, name, acct) {
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Number", 50,250);
     ctx.fillStyle="#fff"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 50,330);
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Name", 50,450);
-    
-    // UPDATED: White Name
+    // WHITE NAME
     ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,520);
     
     drawQrBox(w-220, 40, 120, "#fff");
@@ -305,17 +304,16 @@ function drawCyber(w, h, name, acct) {
     ctx.fillStyle="#050505"; ctx.fillRect(0,0,w,h);
     ctx.shadowColor=currentBank.color; ctx.shadowBlur=20; ctx.strokeStyle=currentBank.color; ctx.lineWidth=5;
     ctx.strokeRect(50,50,w-100,h-100); ctx.shadowBlur=0;
-    
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,80,100,100);
     
-    // UPDATED: QR Beside Logo
+    // QR BESIDE LOGO
     drawQrBox(200, 80, 100, currentBank.color);
     
     ctx.textAlign="right"; ctx.fillStyle="#fff"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, w-80,140);
     ctx.textAlign="left"; ctx.shadowColor=currentBank.color; ctx.shadowBlur=10;
     ctx.fillStyle="#fff"; ctx.font="bold 90px Roboto"; ctx.fillText(acct, 80,350); ctx.shadowBlur=0;
     
-    // UPDATED: White Name
+    // WHITE NAME
     ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 80,500);
 }
 
@@ -366,7 +364,9 @@ function drawGeometric(w, h, name, acct) {
     
     ctx.fillStyle="rgba(255,255,255,0.9)"; ctx.beginPath(); roundRectPath(ctx,150,150,w-300,h-300,20); ctx.fill();
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40,180,80,80);
-    drawQrBox(w-250, 170, 60, "#333");
+    
+    // LARGE QR TOP RIGHT
+    drawQrBox(w-150, 50, 120, "#333");
     
     ctx.fillStyle="#000"; ctx.textAlign="center"; ctx.font="bold 70px Roboto"; ctx.fillText(acct, w/2,330);
     ctx.font="bold 45px Padauk"; ctx.fillText(name, w/2,410);
@@ -375,14 +375,16 @@ function drawGeometric(w, h, name, acct) {
 function drawSplit(w, h, name, acct) {
     ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
     ctx.fillStyle=currentBank.color; ctx.fillRect(0,0,w*0.4,h);
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,80,120,120);
-    ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Roboto"; ctx.fillText(currentBank.short, 80,280);
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,50,120,120);
+    ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Roboto"; ctx.fillText(currentBank.short, 80,220);
     
-    // UPDATED: QR Under BBL
-    drawQrBox(80, 320, 120, "#fff");
+    // QR UNDER BBL
+    drawQrBox(80, 260, 120, "#fff");
     
-    ctx.fillStyle="#000"; ctx.font="bold 70px Roboto"; ctx.fillText(acct, w*0.45,250);
-    ctx.fillStyle="#666"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w*0.45,350);
+    // TEXT CENTERED RIGHT SIDE
+    ctx.fillStyle="#000"; ctx.textAlign="center";
+    ctx.font="bold 70px Roboto"; ctx.fillText(acct, 700,250);
+    ctx.fillStyle="#666"; ctx.font="bold 50px Padauk"; ctx.fillText(name, 700,350);
 }
 
 function drawOcean(w, h, name, acct) {
