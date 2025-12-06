@@ -64,7 +64,6 @@ body {
     padding: 16px; margin-bottom: 24px;
 }
 
-/* SLIDER */
 .preview-container {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -82,17 +81,16 @@ body {
 #resultImage {
     width: 100%; height: 100%; object-fit: cover;
     display: block; pointer-events: none;
-    opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* Animation Class for JS to toggle */
-.fade-scale {
-    animation: fadeScale 0.3s cubic-bezier(0.2, 0, 0, 1);
+/* ANIMATION CLASS */
+.slide-animate {
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-@keyframes fadeScale {
-    0% { opacity: 0.7; transform: scale(0.98); }
-    100% { opacity: 1; transform: scale(1); }
+@keyframes slideIn {
+    0% { transform: translateX(20px); opacity: 0.6; }
+    100% { transform: translateX(0); opacity: 1; }
 }
 
 .style-badge {
