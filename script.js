@@ -43,6 +43,20 @@ const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
+// --- HELPER: SAFE ROUND RECT PATH (WORKS ON ALL PHONES) ---
+// This replaces ctx.roundRect which crashes on older Android WebViews
+function roundRectPath(ctx, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
 // --- INIT ---
 window.onload = function() {
     initBankGrid();
@@ -121,57 +135,43 @@ function updateStyleLabel() {
 
 // --- RENDER FUNCTION ---
 function render() {
-    // Name Case Fix: Removed .toUpperCase()
-    const name = document.getElementById('nameInput').value || "Name Here";
-    const acct = document.getElementById('acctInput').value || "000-000-0000";
-    const style = styleOptions[currentStyleIndex].id;
-    
-    canvas.width = 1000; canvas.height = 600;
-    const w = canvas.width; const h = canvas.height;
+    try {
+        const name = document.getElementById('nameInput').value || "Name Here";
+        const acct = document.getElementById('acctInput').value || "000-000-0000";
+        const style = styleOptions[currentStyleIndex].id;
+        
+        canvas.width = 1000; canvas.height = 600;
+        const w = canvas.width; const h = canvas.height;
 
-    // Reset Canvas
-    ctx.clearRect(0, 0, w, h);
-    
-    // Router
-    switch(style) {
-        case 'layout_bbl': drawBBLStyle(w, h, name, acct); break;
-        case 'layout_gradient': drawGradient(w, h, name, acct); break;
-        case 'layout_material': drawMaterial(w, h, name, acct); break;
-        case 'layout_modern': drawModern(w, h, name, acct); break;
-        case 'layout_midnight': drawMidnight(w, h, name, acct); break;
-        case 'layout_golden': drawGolden(w, h, name, acct); break;
-        case 'layout_cyber': drawCyber(w, h, name, acct); break;
-        case 'layout_nature': drawNature(w, h, name, acct); break;
-        case 'layout_glass': drawGlass(w, h, name, acct); break;
-        case 'layout_minimal': drawMinimal(w, h, name, acct); break;
-        case 'layout_geometric': drawGeometric(w, h, name, acct); break;
-        case 'layout_split': drawSplit(w, h, name, acct); break;
-        case 'layout_ocean': drawOcean(w, h, name, acct); break;
-        case 'layout_ruby': drawRuby(w, h, name, acct); break;
-        default: drawBBLStyle(w, h, name, acct);
+        // Reset Canvas
+        ctx.clearRect(0, 0, w, h);
+        
+        // Router
+        switch(style) {
+            case 'layout_bbl': drawBBLStyle(w, h, name, acct); break;
+            case 'layout_gradient': drawGradient(w, h, name, acct); break;
+            case 'layout_material': drawMaterial(w, h, name, acct); break;
+            case 'layout_modern': drawModern(w, h, name, acct); break;
+            case 'layout_midnight': drawMidnight(w, h, name, acct); break;
+            case 'layout_golden': drawGolden(w, h, name, acct); break;
+            case 'layout_cyber': drawCyber(w, h, name, acct); break;
+            case 'layout_nature': drawNature(w, h, name, acct); break;
+            case 'layout_glass': drawGlass(w, h, name, acct); break;
+            case 'layout_minimal': drawMinimal(w, h, name, acct); break;
+            case 'layout_geometric': drawGeometric(w, h, name, acct); break;
+            case 'layout_split': drawSplit(w, h, name, acct); break;
+            case 'layout_ocean': drawOcean(w, h, name, acct); break;
+            case 'layout_ruby': drawRuby(w, h, name, acct); break;
+            default: drawBBLStyle(w, h, name, acct);
+        }
+        
+        imgOutput.src = canvas.toDataURL("image/png");
+    } catch (e) {
+        console.error("Render error:", e);
     }
-    
-    imgOutput.src = canvas.toDataURL("image/png");
 }
 
-// --- SAFE ROUND RECT HELPER (Works on all browsers) ---
-function drawRoundedRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fill();
-    // Note: This helper includes ctx.fill(), caller should set fillStyle before
-}
-
-// --- DRAWING FUNCTIONS ---
+// --- DRAWING FUNCTIONS (Updated with Safe RoundRect) ---
 
 // 1. DEFAULT
 function drawBBLStyle(w, h, name, acct) {
@@ -195,10 +195,11 @@ function drawBBLStyle(w, h, name, acct) {
     const boxSize = 160; const boxX = w - 210; const boxY = 40;
     ctx.fillStyle = "#f8f9fa"; 
     
-    // Using Safe Helper
-    drawRoundedRect(ctx, boxX, boxY, boxSize, boxSize, 20); 
-    
+    // Use Helper
+    roundRectPath(ctx, boxX, boxY, boxSize, boxSize, 20);
+    ctx.fill();
     ctx.strokeStyle = mainColor; ctx.lineWidth = 4; ctx.stroke();
+    
     if (uploadedUserImg) { ctx.save(); ctx.clip(); ctx.drawImage(uploadedUserImg, boxX, boxY, boxSize, boxSize); ctx.restore(); }
     else { ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText("QR/PHOTO", boxX + boxSize/2, boxY + boxSize/2); }
 
@@ -222,7 +223,8 @@ function drawGradient(w, h, name, acct) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
     ctx.shadowColor = "rgba(0,0,0,0.2)"; ctx.shadowBlur = 30;
     
-    drawRoundedRect(ctx, 100, 100, w-200, h-200, 30);
+    roundRectPath(ctx, 100, 100, w-200, h-200, 30);
+    ctx.fill();
     ctx.shadowBlur = 0;
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130, 130, 80, 80);
@@ -246,10 +248,11 @@ function drawMaterial(w, h, name, acct) {
     // Card Base
     ctx.fillStyle = "#ffffff";
     ctx.shadowColor = "rgba(0,0,0,0.15)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
-    drawRoundedRect(ctx, 80, 80, w-160, h-160, 16);
+    roundRectPath(ctx, 80, 80, w-160, h-160, 16);
+    ctx.fill();
     ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     
-    // Header (Custom top-rounded only)
+    // Header
     ctx.fillStyle = currentBank.color; 
     ctx.beginPath();
     const hx=80, hy=80, hw=w-160, hh=20, rad=16;
@@ -317,7 +320,8 @@ function drawGolden(w, h, name, acct) {
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
     ctx.fillStyle = "#000"; 
-    drawRoundedRect(ctx, 50, 50, w-100, h-100, 30);
+    roundRectPath(ctx, 50, 50, w-100, h-100, 30);
+    ctx.fill();
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 100, 100, 80, 80);
     
@@ -359,7 +363,8 @@ function drawNature(w, h, name, acct) {
     ctx.beginPath(); ctx.arc(w, h, 400, 0, Math.PI*2); ctx.fill();
     
     ctx.fillStyle = "#fff"; 
-    drawRoundedRect(ctx, 80, 120, w-160, h-240, 20);
+    roundRectPath(ctx, 80, 120, w-160, h-240, 20);
+    ctx.fill();
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120, 150, 80, 80);
     
@@ -376,7 +381,8 @@ function drawGlass(w, h, name, acct) {
     ctx.fillStyle = grd; ctx.fillRect(0,0,w,h);
     
     ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-    drawRoundedRect(ctx, 100, 100, w-200, h-200, 30);
+    roundRectPath(ctx, 100, 100, w-200, h-200, 30);
+    ctx.fill();
     
     ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 2; ctx.stroke();
     
@@ -413,7 +419,8 @@ function drawGeometric(w, h, name, acct) {
     ctx.fillStyle = "#3498DB"; ctx.beginPath(); ctx.rect(100, h-200, 200, 200); ctx.fill();
     
     ctx.fillStyle = "rgba(255,255,255,0.9)"; 
-    drawRoundedRect(ctx, 150, 150, w-300, h-300, 20);
+    roundRectPath(ctx, 150, 150, w-300, h-300, 20);
+    ctx.fill();
     
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40, 180, 80, 80);
     
