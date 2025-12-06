@@ -41,7 +41,7 @@ const canvas = document.getElementById('cardCanvas');
 const ctx = canvas.getContext('2d');
 const imgOutput = document.getElementById('resultImage');
 
-// --- HELPER: SAFE ROUND RECT PATH (IMPORTANT FIX) ---
+// --- HELPER: SAFE ROUND RECT PATH ---
 function roundRectPath(ctx, x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
     if (h < 2 * r) r = h / 2;
@@ -209,7 +209,7 @@ function drawBBLStyle(w, h, name, acct) {
     ctx.fillStyle = mainColor; ctx.fillRect(50, 250, 320, 80);
     ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
     
-    // SHORT CODE as BANK NUMBER
+    // Short Code Label
     ctx.font = "bold 45px Roboto"; ctx.textAlign="center"; ctx.fillText(currentBank.short, 210, 305);
     
     ctx.fillStyle = "#444"; ctx.font = "bold 80px Roboto"; ctx.textAlign="left"; ctx.fillText(acct, 400, 315);
@@ -282,6 +282,7 @@ function drawMidnight(w, h, name, acct) {
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Number", 50,250);
     ctx.fillStyle="#fff"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 50,330);
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Name", 50,450);
+    
     // WHITE NAME
     ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,520);
     
@@ -387,13 +388,23 @@ function drawSplit(w, h, name, acct) {
     ctx.fillStyle="#666"; ctx.font="bold 50px Padauk"; ctx.fillText(name, 700,350);
 }
 
+// UPDATED OCEAN WAVES (Match Bank Color)
 function drawOcean(w, h, name, acct) {
-    ctx.fillStyle="#E0F7FA"; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle="#0288D1"; ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(0,300); ctx.bezierCurveTo(300,400,700,200,w,300); ctx.lineTo(w,h); ctx.fill();
-    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
-    drawQrBox(180, 50, 100, "#01579B");
+    // White Background for clean look
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
     
-    ctx.fillStyle="#01579B"; ctx.textAlign="right"; ctx.font="bold 60px Roboto"; ctx.fillText(acct, w-50,150);
+    // Wave matches bank color
+    ctx.fillStyle=currentBank.color; 
+    ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(0,300); 
+    ctx.bezierCurveTo(300,400,700,200,w,300); ctx.lineTo(w,h); ctx.fill();
+    
+    if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
+    drawQrBox(180, 50, 100, currentBank.color);
+    
+    // Account No matches bank color
+    ctx.fillStyle=currentBank.color; ctx.textAlign="right"; ctx.font="bold 60px Roboto"; ctx.fillText(acct, w-50,150);
+    
+    // Name is white (on wave)
     ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,500);
 }
 
