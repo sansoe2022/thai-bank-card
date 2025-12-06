@@ -61,21 +61,30 @@ window.onload = function() {
     initSwipeGestures(); 
     initTheme(); 
     
-    // Auto Fill Check
+    // Check URL Params
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('b')) {
-        const t = banks.find(b => b.id === urlParams.get('b'));
-        if (t) currentBank = t;
+    const shouldDownload = urlParams.get('dl');
+    const pBank = urlParams.get('b');
+    const pName = urlParams.get('n');
+    const pAcct = urlParams.get('a');
+
+    if (pBank) {
+        const targetBank = banks.find(b => b.id === pBank);
+        if (targetBank) currentBank = targetBank;
     }
     
     updateStyleLabel();
     loadBankLogo(currentBank);
     
-    if (urlParams.get('n')) document.getElementById('nameInput').value = decodeURIComponent(urlParams.get('n'));
-    if (urlParams.get('a')) document.getElementById('acctInput').value = decodeURIComponent(urlParams.get('a'));
+    if (pName) document.getElementById('nameInput').value = decodeURIComponent(pName);
+    if (pAcct) document.getElementById('acctInput').value = decodeURIComponent(pAcct);
 
-    if (urlParams.get('dl') === '1' && !isFacebookBrowser()) {
-        setTimeout(() => { render(); setTimeout(downloadImage, 800); }, 500);
+    // Auto Download if opened from Intent
+    if (shouldDownload === '1' && !isFacebookBrowser()) {
+        setTimeout(() => { 
+            render(); 
+            setTimeout(downloadImage, 800); 
+        }, 500);
     }
 };
 
@@ -100,66 +109,68 @@ function updateThemeIcon() {
 
 // --- SLIDER & ANIMATION ---
 function initDots() {
-    const c = document.getElementById('styleDots');
-    c.innerHTML = '';
-    styleOptions.forEach((_, i) => {
-        const d = document.createElement('div');
-        d.className = `dot ${i === 0 ? 'active' : ''}`;
-        d.onclick = () => jumpToStyle(i);
-        c.appendChild(d);
+    const container = document.getElementById('styleDots');
+    container.innerHTML = '';
+    styleOptions.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.className = `dot ${index === 0 ? 'active' : ''}`;
+        dot.onclick = () => jumpToStyle(index);
+        container.appendChild(dot);
     });
 }
+
 function updateDots() {
-    document.querySelectorAll('.dot').forEach((d, i) => {
-        if (i === currentStyleIndex) d.classList.add('active'); else d.classList.remove('active');
+    document.querySelectorAll('.dot').forEach((dot, index) => {
+        if (index === currentStyleIndex) dot.classList.add('active');
+        else dot.classList.remove('active');
     });
 }
-function jumpToStyle(i) {
-    if (i === currentStyleIndex) return;
-    currentStyleIndex = i;
+
+function jumpToStyle(index) {
+    if (index === currentStyleIndex) return;
+    currentStyleIndex = index;
     triggerAnimation();
     updateUIAndRender();
 }
-function changeStyle(d) {
-    currentStyleIndex += d;
+
+function changeStyle(direction) {
+    currentStyleIndex += direction;
     if (currentStyleIndex >= styleOptions.length) currentStyleIndex = 0;
     else if (currentStyleIndex < 0) currentStyleIndex = styleOptions.length - 1;
     triggerAnimation();
     updateUIAndRender();
 }
+
 function triggerAnimation() {
     const img = document.getElementById('resultImage');
     img.classList.remove('zoom-animate');
-    void img.offsetWidth; // trigger reflow
+    void img.offsetWidth; // Trigger Reflow
     img.classList.add('zoom-animate');
 }
-function updateUIAndRender() { updateStyleLabel(); updateDots(); render(); }
-function updateStyleLabel() {
-    document.getElementById('currentStyleLabel').innerText = styleOptions[currentStyleIndex].label;
+
+function updateUIAndRender() {
+    updateStyleLabel();
+    updateDots();
+    render();
 }
+
+function updateStyleLabel() {
+    const labelEl = document.getElementById('currentStyleLabel');
+    if(labelEl) labelEl.innerText = styleOptions[currentStyleIndex].label;
+}
+
 function initSwipeGestures() {
-    const el = document.getElementById('swipeArea');
-    let sx = 0, ex = 0;
-    el.addEventListener('touchstart', (e) => sx = e.changedTouches[0].screenX, {passive: true});
-    el.addEventListener('touchend', (e) => {
-        ex = e.changedTouches[0].screenX;
-        if (ex < sx - 50) changeStyle(1); else if (ex > sx + 50) changeStyle(-1);
+    const swipeArea = document.getElementById('swipeArea');
+    let startX = 0; let endX = 0;
+    swipeArea.addEventListener('touchstart', (e) => { startX = e.changedTouches[0].screenX; }, {passive: true});
+    swipeArea.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].screenX;
+        if (endX < startX - 50) changeStyle(1);
+        else if (endX > startX + 50) changeStyle(-1);
     }, {passive: true});
 }
 
-// --- QR BOX DRAWER ---
-function drawQrBox(x, y, size, borderColor="#ccc") {
-    if (uploadedUserImg) {
-        ctx.save(); ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.closePath(); ctx.clip();
-        ctx.drawImage(uploadedUserImg, x, y, size, size); ctx.restore();
-    } else {
-        ctx.fillStyle = "#f8f9fa"; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.fill();
-        ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText("QR", x+size/2, y+size/2+7);
-    }
-    ctx.strokeStyle = borderColor; ctx.lineWidth = 4; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.stroke();
-}
-
-// --- RENDER ---
+// --- RENDER FUNCTION ---
 function render() {
     try {
         const name = document.getElementById('nameInput').value || "Name Here";
@@ -188,7 +199,19 @@ function render() {
             default: drawBBLStyle(w, h, name, acct);
         }
         imgOutput.src = canvas.toDataURL("image/png");
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Render error:", e); }
+}
+
+// --- QR BOX DRAWER ---
+function drawQrBox(x, y, size, borderColor="#ccc") {
+    if (uploadedUserImg) {
+        ctx.save(); ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.closePath(); ctx.clip();
+        ctx.drawImage(uploadedUserImg, x, y, size, size); ctx.restore();
+    } else {
+        ctx.fillStyle = "#f8f9fa"; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.fill();
+        ctx.fillStyle = "#ccc"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText("QR", x+size/2, y+size/2+7);
+    }
+    ctx.strokeStyle = borderColor; ctx.lineWidth = 4; ctx.beginPath(); roundRectPath(ctx, x, y, size, size, 20); ctx.stroke();
 }
 
 // --- DRAWING STYLES ---
@@ -199,7 +222,7 @@ function drawBBLStyle(w, h, name, acct) {
     else { ctx.fillStyle=mainColor; ctx.beginPath(); ctx.arc(125,115,70,0,Math.PI*2); ctx.fill(); }
     
     ctx.fillStyle = "#ccc"; ctx.fillRect(230, 50, 4, 120);
-    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto"; ctx.textAlign = "left"; 
+    ctx.fillStyle = mainColor; ctx.font = "bold 50px Roboto, Arial"; ctx.textAlign = "left"; 
     ctx.fillText(currentBank.name, 260, 110);
     ctx.fillStyle = "#555"; ctx.font = "bold 40px Kanit"; ctx.fillText(currentBank.thName||"Bank", 260, 160);
     ctx.fillStyle = "#f97316"; ctx.fillRect(260, 125, 300, 4);
@@ -208,8 +231,6 @@ function drawBBLStyle(w, h, name, acct) {
 
     ctx.fillStyle = mainColor; ctx.fillRect(50, 250, 320, 80);
     ctx.fillStyle = (currentBank.id==='bay')?currentBank.txtColor:"#fff";
-    
-    // Short Code Label
     ctx.font = "bold 45px Roboto"; ctx.textAlign="center"; ctx.fillText(currentBank.short, 210, 305);
     
     ctx.fillStyle = "#444"; ctx.font = "bold 80px Roboto"; ctx.textAlign="left"; ctx.fillText(acct, 400, 315);
@@ -228,13 +249,12 @@ function drawGradient(w, h, name, acct) {
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 130,130,80,80);
     ctx.fillStyle=currentBank.color; ctx.font="bold 40px Roboto"; ctx.textAlign="left"; ctx.fillText(currentBank.short, 230,185);
     
-    // Circular Photo
     if(uploadedUserImg) {
         ctx.save(); ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.clip();
         ctx.drawImage(uploadedUserImg, w/2-60,170,120,120); ctx.restore();
     } else {
         ctx.fillStyle="#eee"; ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="#ccc"; ctx.font="16px Arial"; ctx.textAlign="center"; ctx.fillText("QR", w/2, 235);
+        ctx.fillStyle="#ccc"; ctx.font="bold 16px Arial"; ctx.textAlign="center"; ctx.fillText("QR", w/2, 235);
     }
     ctx.beginPath(); ctx.arc(w/2,230,60,0,Math.PI*2); ctx.strokeStyle=currentBank.color; ctx.lineWidth=4; ctx.stroke();
     
@@ -266,7 +286,6 @@ function drawModern(w, h, name, acct) {
     ctx.fillStyle=currentBank.color; ctx.fillRect(0,0,30,h);
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 60,50,100,100);
     drawQrBox(w-180, 50, 120, currentBank.color);
-    
     ctx.textAlign="left"; ctx.fillStyle="#000"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, 190,115);
     ctx.fillStyle=currentBank.color; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 80,320);
     ctx.fillStyle="#000"; ctx.font="bold 50px Padauk"; ctx.fillText(name, 80,470);
@@ -277,15 +296,11 @@ function drawMidnight(w, h, name, acct) {
     ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
     ctx.strokeStyle=currentBank.color; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(50,180); ctx.lineTo(w-50,180); ctx.stroke();
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
-    
     ctx.textAlign="left"; ctx.fillStyle="#fff"; ctx.font="bold 50px Roboto"; ctx.fillText(currentBank.name, 180,120);
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Number", 50,250);
     ctx.fillStyle="#fff"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, 50,330);
     ctx.fillStyle="#888"; ctx.font="30px Roboto"; ctx.fillText("Account Name", 50,450);
-    
-    // WHITE NAME
     ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,520);
-    
     drawQrBox(w-220, 40, 120, "#fff");
 }
 
@@ -295,7 +310,6 @@ function drawGolden(w, h, name, acct) {
     ctx.fillStyle="#000"; ctx.beginPath(); roundRectPath(ctx,50,50,w-100,h-100,30); ctx.fill();
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 100,100,80,80);
     drawQrBox(w-200, 100, 100, "#BF953F");
-    
     ctx.textAlign="left"; ctx.fillStyle="#BF953F"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.short, 200,155);
     ctx.fillStyle="#fff"; ctx.font="bold 70px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,300);
     ctx.fillStyle="#BF953F"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w/2,450);
@@ -306,15 +320,10 @@ function drawCyber(w, h, name, acct) {
     ctx.shadowColor=currentBank.color; ctx.shadowBlur=20; ctx.strokeStyle=currentBank.color; ctx.lineWidth=5;
     ctx.strokeRect(50,50,w-100,h-100); ctx.shadowBlur=0;
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,80,100,100);
-    
-    // QR BESIDE LOGO
     drawQrBox(200, 80, 100, currentBank.color);
-    
     ctx.textAlign="right"; ctx.fillStyle="#fff"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, w-80,140);
     ctx.textAlign="left"; ctx.shadowColor=currentBank.color; ctx.shadowBlur=10;
     ctx.fillStyle="#fff"; ctx.font="bold 90px Roboto"; ctx.fillText(acct, 80,350); ctx.shadowBlur=0;
-    
-    // WHITE NAME
     ctx.fillStyle="#ffffff"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 80,500);
 }
 
@@ -323,10 +332,8 @@ function drawNature(w, h, name, acct) {
     ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
     ctx.fillStyle="rgba(255,255,255,0.2)"; ctx.beginPath(); ctx.arc(0,0,300,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(w,h,400,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#fff"; ctx.beginPath(); roundRectPath(ctx,80,120,w-160,h-240,20); ctx.fill();
-    
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 120,150,80,80);
     drawQrBox(w-220, 150, 80, "#56ab2f");
-    
     ctx.textAlign="left"; ctx.fillStyle="#2c3e50"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.name, 230,200);
     ctx.fillStyle="#2c3e50"; ctx.font="bold 80px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,340);
     ctx.fillStyle="#56ab2f"; ctx.font="bold 45px Padauk"; ctx.fillText(name, w/2,420);
@@ -337,10 +344,8 @@ function drawGlass(w, h, name, acct) {
     ctx.fillStyle=grd; ctx.fillRect(0,0,w,h);
     ctx.fillStyle="rgba(255,255,255,0.25)"; ctx.beginPath(); roundRectPath(ctx,100,100,w-200,h-200,30); ctx.fill();
     ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.lineWidth=2; ctx.stroke();
-    
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 140,140,80,80);
     drawQrBox(w-240, 140, 80, "#fff");
-    
     ctx.textAlign="left"; ctx.fillStyle="#fff"; ctx.font="bold 40px Roboto"; ctx.fillText(currentBank.short, 250,195);
     ctx.fillStyle="#fff"; ctx.font="bold 70px Roboto"; ctx.textAlign="center"; ctx.fillText(acct, w/2,320);
     ctx.fillStyle="#fff"; ctx.font="bold 50px Padauk"; ctx.fillText(name, w/2,420);
@@ -351,7 +356,6 @@ function drawMinimal(w, h, name, acct) {
     ctx.strokeStyle="#000"; ctx.lineWidth=4; ctx.strokeRect(30,30,w-60,h-60);
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50,80,100,100);
     drawQrBox(w-160, 50, 100, "#000");
-    
     ctx.fillStyle="#000"; ctx.textAlign="center"; ctx.font="30px Roboto"; ctx.fillText("ACCOUNT DETAILS", w/2,250);
     ctx.font="bold 90px Roboto"; ctx.fillText(acct, w/2,350);
     ctx.fillRect(w/2-100,400,200,2); ctx.font="40px Padauk"; ctx.fillText(name, w/2,480);
@@ -362,13 +366,9 @@ function drawGeometric(w, h, name, acct) {
     ctx.fillStyle="#E74C3C"; ctx.beginPath(); ctx.arc(100,100,150,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#F1C40F"; ctx.beginPath(); ctx.moveTo(w,0); ctx.lineTo(w-300,0); ctx.lineTo(w,300); ctx.fill();
     ctx.fillStyle="#3498DB"; ctx.beginPath(); ctx.rect(100,h-200,200,200); ctx.fill();
-    
     ctx.fillStyle="rgba(255,255,255,0.9)"; ctx.beginPath(); roundRectPath(ctx,150,150,w-300,h-300,20); ctx.fill();
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-40,180,80,80);
-    
-    // LARGE QR TOP RIGHT
     drawQrBox(w-150, 50, 120, "#333");
-    
     ctx.fillStyle="#000"; ctx.textAlign="center"; ctx.font="bold 70px Roboto"; ctx.fillText(acct, w/2,330);
     ctx.font="bold 45px Padauk"; ctx.fillText(name, w/2,410);
 }
@@ -378,33 +378,19 @@ function drawSplit(w, h, name, acct) {
     ctx.fillStyle=currentBank.color; ctx.fillRect(0,0,w*0.4,h);
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 80,50,120,120);
     ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Roboto"; ctx.fillText(currentBank.short, 80,220);
-    
-    // QR UNDER BBL
     drawQrBox(80, 260, 120, "#fff");
-    
-    // TEXT CENTERED RIGHT SIDE
     ctx.fillStyle="#000"; ctx.textAlign="center";
     ctx.font="bold 70px Roboto"; ctx.fillText(acct, 700,250);
     ctx.fillStyle="#666"; ctx.font="bold 50px Padauk"; ctx.fillText(name, 700,350);
 }
 
-// UPDATED OCEAN WAVES (Match Bank Color)
 function drawOcean(w, h, name, acct) {
-    // White Background for clean look
     ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
-    
-    // Wave matches bank color
-    ctx.fillStyle=currentBank.color; 
-    ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(0,300); 
+    ctx.fillStyle=currentBank.color; ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(0,300); 
     ctx.bezierCurveTo(300,400,700,200,w,300); ctx.lineTo(w,h); ctx.fill();
-    
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, 50,50,100,100);
     drawQrBox(180, 50, 100, currentBank.color);
-    
-    // Account No matches bank color
     ctx.fillStyle=currentBank.color; ctx.textAlign="right"; ctx.font="bold 60px Roboto"; ctx.fillText(acct, w-50,150);
-    
-    // Name is white (on wave)
     ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.font="bold 60px Padauk"; ctx.fillText(name, 50,500);
 }
 
@@ -414,7 +400,6 @@ function drawRuby(w, h, name, acct) {
     ctx.strokeStyle="#FFCDD2"; ctx.lineWidth=10; ctx.strokeRect(50,50,w-100,h-100);
     if(bankLogoImg.complete) ctx.drawImage(bankLogoImg, w/2-50,100,100,100);
     drawQrBox(w-200, 100, 100, "#fff");
-    
     ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.font="bold 80px Roboto"; ctx.fillText(acct, w/2,320);
     ctx.font="40px Padauk"; ctx.fillText(name, w/2,420);
 }
@@ -424,22 +409,108 @@ function isFacebookBrowser() {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
     return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
 }
+
 function downloadImage() {
-    if (isFacebookBrowser()) showFacebookBrowserDialog();
-    else {
+    // Check if user is in Facebook/Instagram/Messenger Browser
+    if (isFacebookBrowser()) {
+        showFacebookBrowserDialog();
+    } else {
         render(); 
         const link = document.createElement('a');
         link.download = `BankCard-${currentBank.short}-${Date.now()}.png`;
         link.href = canvas.toDataURL("image/png");
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        document.body.appendChild(link); 
+        link.click(); 
+        document.body.removeChild(link);
     }
 }
+
+// --- CUSTOM DIALOG FOR FACEBOOK ---
 function showFacebookBrowserDialog() {
-    const d = document.createElement('div');
-    d.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999;`;
-    d.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; text-align:center;"><p>Please open in external browser</p><button onclick="document.body.removeChild(this.parentNode.parentNode)">Close</button></div>`;
-    document.body.appendChild(d);
+    // Remove existing if any
+    const existing = document.getElementById('fb-modal-backdrop');
+    if(existing) document.body.removeChild(existing);
+
+    // Create Modal Backdrop
+    const modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'fb-modal-backdrop';
+    modalBackdrop.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 10000; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    `;
+    
+    // Create Dialog Box
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: white; border-radius: 12px; padding: 24px;
+        max-width: 340px; width: 100%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        text-align: center; display: flex; flex-direction: column; align-items: center;
+    `;
+    
+    dialog.innerHTML = `
+        <div style="margin-bottom: 12px;">
+            <svg width="48" height="48" viewBox="0 0 32 32">
+                <path d="M32 16c0-8.837-7.163-16-16-16S0 7.163 0 16c0 7.98 5.85 14.604 13.5 15.803v-11.177h-4.063V16h4.063v-3.527c0-4.009 2.385-6.223 6.043-6.223 1.75 0 3.579.313 3.579.313v3.933h-2.016c-1.986 0-2.604 1.233-2.604 2.5v3h4.43l-.708 4.626h-3.722v11.177C26.15 30.604 32 23.98 32 16z" fill="#1877F2"/>
+            </svg>
+        </div>
+        
+        <h3 style="color: #1877F2; margin: 0 0 8px 0; font-size: 19px; font-weight: 700;">Facebook Browser Detected</h3>
+        
+        <p style="color: #000; font-weight: 600; font-size: 15px; margin: 0 0 8px 0; line-height: 1.4;">
+            Facebook တွင် တိုက်ရိုက် Download မရနိုင်ပါ
+        </p>
+        
+        <p style="color: #65676b; font-size: 14px; margin: 0 0 24px 0; line-height: 1.4;">
+            Chrome (သို့) ပြင်ပ Browser ဖြင့် ဖွင့်ရန် Continue ကို နှိပ်ပါ
+        </p>
+        
+        <div style="display: flex; gap: 12px; width: 100%;">
+            <button id="fbDialogBack" style="
+                flex: 1; padding: 12px 0;
+                background: #fff; border: 1px solid #e4e6eb; border-radius: 6px;
+                color: #4b4f56; font-weight: 600; font-size: 15px; cursor: pointer;
+            ">GO BACK</button>
+            
+            <button id="fbDialogContinue" style="
+                flex: 1; padding: 12px 0;
+                background: #1877F2; border: none; border-radius: 6px;
+                color: #fff; font-weight: 600; font-size: 15px; cursor: pointer;
+            ">CONTINUE</button>
+        </div>
+    `;
+    
+    modalBackdrop.appendChild(dialog);
+    document.body.appendChild(modalBackdrop);
+    
+    // Bind Events
+    document.getElementById('fbDialogBack').onclick = () => document.body.removeChild(modalBackdrop);
+    document.getElementById('fbDialogContinue').onclick = () => {
+        document.body.removeChild(modalBackdrop);
+        openInExternalBrowser();
+    };
+    
+    modalBackdrop.onclick = (e) => {
+        if (e.target === modalBackdrop) document.body.removeChild(modalBackdrop);
+    };
 }
+
+function openInExternalBrowser() {
+    const currentURL = window.location.href.split('?')[0];
+    const name = document.getElementById('nameInput').value;
+    const acct = document.getElementById('acctInput').value;
+    const bankId = currentBank.id;
+    
+    // Add dl=1 to trigger auto download on next load
+    const fullURL = `${currentURL}?dl=1&b=${bankId}&n=${encodeURIComponent(name)}&a=${encodeURIComponent(acct)}`;
+    
+    // Android Intent to Force Open Chrome
+    window.location.href = `intent://${fullURL.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+}
+
+// --- CROP HANDLERS ---
 function handleLogoUpload(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
